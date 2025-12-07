@@ -1,188 +1,76 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Atlas Energy Consultancy — Coming Soon</title>
-  <meta name="description" content="Atlas Energy Consultancy — Strategic advisory, decarbonisation roadmaps, and energy procurement." />
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="A very simple GitHub Pages site">
+  <title>Your Project — GitHub Pages</title>
+  <!-- Replace or add a favicon at /favicon.ico in your repo -->
+  <link rel="icon" href="/favicon.ico">
 
-  <!-- Fonts -->
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Montserrat:wght@600;800&display=swap" rel="stylesheet">
-
+  <!-- Minimal inline styles so this is a single-file template -->
   <style>
-    :root{
-      --bg:#0b0f12; /* deep charcoal */
-      --panel:#0f1417;
-      --muted:rgba(255,255,255,0.65);
-      --accent:#7be495; /* soft green */
-      --glass: rgba(255,255,255,0.03);
-      --radius:16px;
-      --max-width:1100px;
-    }
-
+    :root{ --bg:#f7fafc; --card:#ffffff; --muted:#6b7280; --accent:#2563eb }
     *{box-sizing:border-box}
     html,body{height:100%}
     body{
-      margin:0;
-      font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
-      background: radial-gradient(1200px 600px at 10% 10%, rgba(123,228,149,0.03), transparent 8%),
-                  linear-gradient(180deg, rgba(255,255,255,0.01), transparent 30%),
-                  var(--bg);
-      color:#eef3f6;
-      -webkit-font-smoothing:antialiased;
-      -moz-osx-font-smoothing:grayscale;
-      padding:48px 24px;
-      display:flex;
-      align-items:center;
-      justify-content:center;
+      margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto, "Helvetica Neue", Arial;
+      background:var(--bg); color:#0f172a; -webkit-font-smoothing:antialiased;
+      display:flex; align-items:center; justify-content:center; padding:2rem;
     }
-
-    .card{
-      width:100%;
-      max-width:var(--max-width);
-      background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
-      border-radius:calc(var(--radius) + 4px);
-      padding:40px;
-      box-shadow: 0 10px 30px rgba(2,6,10,0.7), inset 0 1px 0 rgba(255,255,255,0.02);
-      border: 1px solid rgba(255,255,255,0.04);
-      display:grid;
-      grid-template-columns: 1fr 360px;
-      gap:32px;
-      align-items:start;
-    }
-
-    /* responsive */
-    @media (max-width:880px){
-      .card{grid-template-columns:1fr; padding:28px}
-    }
-
-    .brand{
-      display:flex;align-items:center;gap:16px;margin-bottom:8px
-    }
-    .logo{
-      width:56px;height:56px;border-radius:12px;background:linear-gradient(135deg,var(--accent),#3ec4c1);display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow: 0 6px 20px rgba(123,228,149,0.06), inset 0 -4px 12px rgba(0,0,0,0.25);
-    }
-    .logo svg{width:34px;height:34px}
-    .brand h1{font-family:Montserrat, Inter; font-size:16px; margin:0; color:#f6fbfb; letter-spacing:0.2px}
-    .brand p{margin:0;font-size:12px;color:var(--muted)}
-
-    .hero-title{font-family:Montserrat, Inter; font-size:clamp(28px, 4vw, 44px); line-height:1.02; margin:6px 0 16px}
-    .hero-sub{color:var(--muted); font-size:16px; max-width:65ch; margin-bottom:22px}
-
-    .actions{display:flex;gap:12px;align-items:center}
-    .btn{background:linear-gradient(180deg,var(--accent), #39c197); color:#0b0f12; border:0; padding:12px 18px; border-radius:12px; font-weight:700; cursor:pointer; box-shadow:0 6px 18px rgba(59,186,135,0.14); text-decoration:none}
-    .btn.ghost{background:transparent;color:var(--muted); border:1px solid rgba(255,255,255,0.04); padding:10px 16px}
-
-    /* right panel */
-    .panel{background:linear-gradient(180deg, rgba(255,255,255,0.012), rgba(255,255,255,0.006)); padding:20px; border-radius:12px; border:1px solid rgba(255,255,255,0.03)}
-    .stat{display:flex;justify-content:space-between;align-items:center;padding:10px 8px}
-    .stat h3{margin:0;font-size:20px}
-    .stat p{margin:0;color:var(--muted);font-size:13px}
-
-    .small{font-size:13px;color:var(--muted)}
-    .divider{height:1px;background:linear-gradient(90deg, transparent, rgba(255,255,255,0.03), transparent);margin:12px 0;border-radius:2px}
-
-    footer{margin-top:22px;display:flex;justify-content:space-between;align-items:center;gap:12px}
-    .socials{display:flex;gap:10px}
-    .socials a{display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:8px;background:var(--glass);text-decoration:none;color:var(--muted);border:1px solid rgba(255,255,255,0.02)}
-
-    /* subtle animated pulse */
-    .logo::after{
-      content:'';position:absolute;width:64px;height:64px;border-radius:12px;filter:blur(18px);opacity:0.18;background:radial-gradient(circle at 30% 20%, rgba(123,228,149,0.6), transparent 30%);transform:translate(-6px,-6px);z-index:-1
-    }
-
-    /* accessibility focus */
-    a:focus, button:focus{outline:3px solid rgba(123,228,149,0.18);outline-offset:3px}
-
-    /* tiny footer note */
-    .credits{font-size:12px;color:var(--muted)}
-
+    .wrap{max-width:900px; width:100%}
+    header{display:flex; align-items:center; justify-content:space-between; margin-bottom:1.25rem}
+    .brand{font-weight:700; font-size:1.125rem}
+    nav a{margin-left:0.75rem; color:var(--muted); text-decoration:none}
+    .card{background:var(--card); padding:2rem; border-radius:12px; box-shadow:0 6px 18px rgba(15,23,42,0.06)}
+    h1{margin:0 0 .5rem 0; font-size:1.6rem}
+    p{margin:0 0 1rem 0; color:var(--muted)}
+    .actions{margin-top:1.25rem}
+    .btn{display:inline-block; padding:.55rem .9rem; border-radius:10px; text-decoration:none; font-weight:600}
+    .btn-primary{background:var(--accent); color:#fff}
+    .btn-ghost{border:1px solid #e6edf8; color:var(--accent); background:transparent}
+    footer{margin-top:1rem; color:var(--muted); font-size:.875rem}
+    @media (max-width:560px){ body{padding:1rem} .card{padding:1rem} header{flex-direction:column; align-items:flex-start} nav{margin-top:.5rem} }
   </style>
 </head>
 <body>
-  <main class="card" role="main" aria-labelledby="page-title">
+  <div class="wrap">
+    <header>
+      <div class="brand">your-username.github.io</div>
+      <nav>
+        <a href="#">Home</a>
+        <a href="#about">About</a>
+        <a href="#contact">Contact</a>
+      </nav>
+    </header>
 
-    <section>
-      <div class="brand">
-        <div class="logo" aria-hidden="true">
-          <!-- simple monogram / energy icon -->
-          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-            <path d="M12 2v20" stroke="#062018" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-            <path d="M4 13c2.5-6 7-10 12-11" stroke="#062018" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-            <path d="M20 11c-4.5 2.5-7 7-8 11" stroke="#062018" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-        </div>
-        <div>
-          <h1>Atlas Energy Consultancy</h1>
-          <p>Strategic advisory • Decarbonisation roadmaps • Energy procurement</p>
-        </div>
-      </div>
+    <main class="card">
+      <h1>Welcome — simple GitHub Pages template</h1>
+      <p>This is a minimal, single-file HTML template suitable for serving from a GitHub Pages site (e.g. <code>username.github.io</code> or the <code>/docs</code> folder).</p>
 
-      <h2 id="page-title" class="hero-title">Practical strategies for resilient, low‑carbon energy systems</h2>
-      <p class="hero-sub">We help organisations reduce cost and carbon through pragmatic energy strategy, bespoke procurement and operational optimisation. Launching soon — tailored services for commercial and public sector clients.</p>
+      <section id="about">
+        <h2 style="font-size:1.05rem; margin-top:1rem;">About</h2>
+        <p style="margin-bottom:0.5rem">Drop your content below. This template uses only semantic HTML and a tiny amount of CSS so you can easily customize it.</p>
+      </section>
 
-      <div class="actions" role="group" aria-label="Primary actions">
-        <a class="btn" href="mailto:hello@atlasenergy.example">Contact us</a>
-        <a class="btn ghost" href="#more">Learn more</a>
+      <div class="actions">
+        <a class="btn btn-primary" href="#">Get started</a>
+        <a class="btn btn-ghost" href="#">Learn more</a>
       </div>
 
       <footer>
-        <div class="credits">
-          <div class="small">Launching Q4 2025 — sign up for updates or request a briefing.</div>
-        </div>
-
-        <div class="socials" aria-hidden="true">
-          <a href="#" title="LinkedIn" aria-label="LinkedIn">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M4.98 3.5C4.98 4.88 3.86 6 2.48 6S0 4.88 0 3.5 1.12 1 2.5 1 4.98 2.12 4.98 3.5zM.22 8.75h4.52V24H.22V8.75zM8.78 8.75h4.34v2.05h.06c.6-1.14 2.08-2.34 4.28-2.34 4.58 0 5.42 3.01 5.42 6.92V24h-4.52v-7.24c0-1.73-.03-3.95-2.41-3.95-2.42 0-2.79 1.9-2.79 3.86V24H8.78V8.75z" fill="currentColor"/>
-            </svg>
-          </a>
-          <a href="#" title="X / Twitter" aria-label="X">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M23 4.56c-.8.36-1.66.6-2.57.71.92-.55 1.62-1.42 1.95-2.46-.86.51-1.8.88-2.81 1.08C18.88 3.5 17.74 3 16.5 3c-2.06 0-3.73 1.66-3.73 3.71 0 .29.03.57.1.84-3.1-.16-5.86-1.68-7.7-3.99-.32.55-.5 1.2-.5 1.89 0 1.31.66 2.47 1.66 3.15-.61-.02-1.18-.19-1.68-.47v.05c0 1.82 1.3 3.34 3.03 3.68-.32.09-.65.14-.99.14-.24 0-.48-.02-.71-.07.48 1.5 1.86 2.59 3.5 2.62-1.28 1.01-2.9 1.61-4.66 1.61-.3 0-.6-.02-.9-.05 1.66 1.07 3.63 1.7 5.75 1.7 6.9 0 10.68-5.72 10.68-10.67v-.49c.73-.52 1.36-1.17 1.86-1.91-.67.3-1.39.5-2.14.6z" fill="currentColor"/>
-            </svg>
-          </a>
-        </div>
+        <small>&copy; <span id="year"></span> Your Name • Built with GitHub Pages</small>
       </footer>
-    </section>
+    </main>
+  </div>
 
-    <aside class="panel" id="more" aria-labelledby="panel-title">
-      <h3 id="panel-title">Quick facts</h3>
-      <div class="divider" role="presentation"></div>
+  <script>
+    // small nicety: current year in footer
+    document.getElementById('year').textContent = new Date().getFullYear();
 
-      <div class="stat">
-        <div>
-          <h3>10+</h3>
-          <p class="small">Years delivering energy strategy</p>
-        </div>
-        <div aria-hidden="true">
-          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.77 5.82 22 7 14.14 2 9.27l6.91-1.01L12 2z" fill="rgba(123,228,149,0.12)"/></svg>
-        </div>
-      </div>
-
-      <div class="stat">
-        <div>
-          <h3>£120M+</h3>
-          <p class="small">Procurement value managed</p>
-        </div>
-        <div aria-hidden="true">&nbsp;</div>
-      </div>
-
-      <div class="stat">
-        <div>
-          <h3>Clients</h3>
-          <p class="small">Public sector • Manufacturing • Property</p>
-        </div>
-        <div aria-hidden="true">&nbsp;</div>
-      </div>
-
-      <div class="divider" role="presentation"></div>
-
-      <p class="small">Want a briefing before launch? Email <a href="mailto:hello@atlasenergy.example">hello@atlasenergy.example</a> or call <a href="tel:+441234567890">+44 1234 567 890</a>.</p>
-
-    </aside>
-
-  </main>
+    // If you want pretty URLs on GitHub Pages, name this file index.html
+    // - Option A: Create a repository named username.github.io and push this as index.html to the root.
+    // - Option B: Use any repo and place this in /docs then enable GitHub Pages from the repo settings.
+  </script>
 </body>
 </html>

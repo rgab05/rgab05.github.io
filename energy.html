@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Energy Calculator</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
+</head>
+<body>
+
+<nav>
+  <a href="index.html">Home</a>
+  <a href="energy.html">Energy</a>
+  <a href="scenarios.html">Scenarios</a>
+  <a href="methodology.html">Methodology</a>
+</nav>
+
+<div class="container">
+  <h1>Energy Calculator</h1>
+
+  <div class="row">
+    <div>
+      <label>Starting Energy (TWh)</label>
+      <input type="number" id="start" value="100">
+    </div>
+    <div>
+      <label>Growth (%)</label>
+      <input type="number" id="growth" value="3">
+    </div>
+    <div>
+      <label>Years</label>
+      <input type="number" id="years" value="25">
+    </div>
+  </div>
+
+  <button onclick="runEnergyModel()">Run Model</button>
+
+  <div id="chart"></div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>

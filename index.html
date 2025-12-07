@@ -1,76 +1,25 @@
-<!doctype html>
-<html lang="en">
+<!DOCTYPE html>
+<html>
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="A very simple GitHub Pages site">
-  <title>Your Project — GitHub Pages</title>
-  <!-- Replace or add a favicon at /favicon.ico in your repo -->
-  <link rel="icon" href="/favicon.ico">
-
-  <!-- Minimal inline styles so this is a single-file template -->
-  <style>
-    :root{ --bg:#f7fafc; --card:#ffffff; --muted:#6b7280; --accent:#2563eb }
-    *{box-sizing:border-box}
-    html,body{height:100%}
-    body{
-      margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto, "Helvetica Neue", Arial;
-      background:var(--bg); color:#0f172a; -webkit-font-smoothing:antialiased;
-      display:flex; align-items:center; justify-content:center; padding:2rem;
-    }
-    .wrap{max-width:900px; width:100%}
-    header{display:flex; align-items:center; justify-content:space-between; margin-bottom:1.25rem}
-    .brand{font-weight:700; font-size:1.125rem}
-    nav a{margin-left:0.75rem; color:var(--muted); text-decoration:none}
-    .card{background:var(--card); padding:2rem; border-radius:12px; box-shadow:0 6px 18px rgba(15,23,42,0.06)}
-    h1{margin:0 0 .5rem 0; font-size:1.6rem}
-    p{margin:0 0 1rem 0; color:var(--muted)}
-    .actions{margin-top:1.25rem}
-    .btn{display:inline-block; padding:.55rem .9rem; border-radius:10px; text-decoration:none; font-weight:600}
-    .btn-primary{background:var(--accent); color:#fff}
-    .btn-ghost{border:1px solid #e6edf8; color:var(--accent); background:transparent}
-    footer{margin-top:1rem; color:var(--muted); font-size:.875rem}
-    @media (max-width:560px){ body{padding:1rem} .card{padding:1rem} header{flex-direction:column; align-items:flex-start} nav{margin-top:.5rem} }
-  </style>
+  <title>Energy Scenarios | Home</title>
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <div class="wrap">
-    <header>
-      <div class="brand">your-username.github.io</div>
-      <nav>
-        <a href="#">Home</a>
-        <a href="about.html">About Updated</a>
-        <a href="#contact">Contact</a>
-      </nav>
-    </header>
 
-    <main class="card">
-      <h1>Welcome — simple GitHub Pages template</h1>
-      <p>This is a minimal, single-file HTML template suitable for serving from a GitHub Pages site (e.g. <code>username.github.io</code> or the <code>/docs</code> folder).</p>
+<nav>
+  <a href="index.html">Home</a>
+  <a href="energy.html">Energy</a>
+  <a href="scenarios.html">Scenarios</a>
+  <a href="methodology.html">Methodology</a>
+</nav>
 
-      <section id="about">
-        <h2 style="font-size:1.05rem; margin-top:1rem;">About</h2>
-        <p style="margin-bottom:0.5rem">Drop your content below. This template uses only semantic HTML and a tiny amount of CSS so you can easily customize it.</p>
-      </section>
+<div class="container">
+  <h1>Energy Scenarios Dashboard</h1>
+  <p>
+    This tool allows users to explore energy demand growth,
+    compare scenarios, and understand the modeling methodology.
+  </p>
+</div>
 
-      <div class="actions">
-        <a class="btn btn-primary" href="#">Get started</a>
-        <a class="btn btn-ghost" href="#">Learn more</a>
-      </div>
-
-      <footer>
-        <small>&copy; <span id="year"></span> Your Name • Built with GitHub Pages</small>
-      </footer>
-    </main>
-  </div>
-
-  <script>
-    // small nicety: current year in footer
-    document.getElementById('year').textContent = new Date().getFullYear();
-
-    // If you want pretty URLs on GitHub Pages, name this file index.html
-    // - Option A: Create a repository named username.github.io and push this as index.html to the root.
-    // - Option B: Use any repo and place this in /docs then enable GitHub Pages from the repo settings.
-  </script>
 </body>
 </html>

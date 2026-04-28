@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Global Primary Energy Model 2000–2050</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:        #ffffff;
+    --bg-2:      #f4f3ef;
+    --bg-3:      #eeece7;
+    --text-1:    #111827;
+    --text-2:    #6b7280;
+    --text-3:    #9ca3af;
+    --border:    rgba(0,0,0,0.10);
+    --border-md: rgba(0,0,0,0.18);
+    --radius-md: 8px;
+    --radius-lg: 12px;
+    --grid-c:    rgba(0,0,0,0.06);
+    --tick-c:    #999;
+    --tt-bg:     #ffffff;
+    --tt-title:  #111827;
+    --tt-body:   #4b5563;
+    --tt-border: #e5e7eb;
+    --dan:       #A32D2D;
+    --suc:       #0F6E56;
+    --neu:       #111827;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg:        #161b26;
+      --bg-2:      #1e2535;
+      --bg-3:      #252d40;
+      --text-1:    #e2e8f0;
+      --text-2:    #9aa5b4;
+      --text-3:    #5a6a80;
+      --border:    rgba(255,255,255,0.09);
+      --border-md: rgba(255,255,255,0.16);
+      --grid-c:    rgba(255,255,255,0.06);
+      --tick-c:    #7a8aa0;
+      --tt-bg:     #1a2130;
+      --tt-title:  #e2e8f0;
+      --tt-body:   #9aa5b4;
+      --tt-border: #2a3550;
+      --dan:       #F7C1C1;
+      --suc:       #9FE1CB;
+      --neu:       #e2e8f0;
+    }
+  }
+
+  body {
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    background: var(--bg);
+    color: var(--text-1);
+    min-height: 100vh;
+    padding: 28px 20px;
+  }
+
+  .page {
+    max-width: 960px;
+    margin: 0 auto;
+  }
+
+  header {
+    margin-bottom: 22px;
+    border-bottom: 0.5px solid var(--border);
+    padding-bottom: 16px;
+  }
+
+  header h1 {
+    font-size: 22px;
+    font-weight: 500;
+    line-height: 1.3;
+    color: var(--text-1);
+  }
+
+  header p {
+    font-size: 14px;
+    color: var(--text-2);
+    margin-top: 4px;
+    line-height: 1.6;
+  }
+
+  .layout {
+    display: grid;
+    grid-template-columns: 200px 1fr;
+    gap: 20px;
+  }
+
+  /* ── Sidebar ────────────────────────────────── */
+  .sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .section-label {
+    font-size: 10px;
+    color: var(--text-3);
+    text-transform: uppercase;
+    letter-spacing: .07em;
+    margin-bottom: 12px;
+  }
+
+  .param {
+    margin-bottom: 18px;
+  }
+
+  .param-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 6px;
+  }
+
+  .param-header span:first-child {
+    font-size: 13px;
+    color: var(--text-2);
+  }
+
+  .param-header span:last-child {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-1);
+  }
+
+  input[type=range] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 4px;
+    background: var(--bg-3);
+    border-radius: 2px;
+    outline: none;
+    cursor: pointer;
+  }
+
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--text-1);
+    cursor: pointer;
+    border: 2px solid var(--bg);
+    box-shadow: 0 0 0 1px var(--border-md);
+  }
+
+  input[type=range]::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--text-1);
+    cursor: pointer;
+    border: 2px solid var(--bg);
+    box-shadow: 0 0 0 1px var(--border-md);
+  }
+
+  .range-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 10px;
+    color: var(--text-3);
+    margin-top: 3px;
+  }
+
+  .divider {
+    border: none;
+    border-top: 0.5px solid var(--border);
+    margin: 14px 0;
+  }
+
+  .legend {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--text-2);
+  }
+
+  .legend-swatch {
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+    flex-shrink: 0;
+  }
+
+  .source-note {
+    margin-top: 14px;
+    font-size: 10px;
+    color: var(--text-3);
+    line-height: 1.55;
+  }
+
+  /* ── Main panel ─────────────────────────────── */
+  .main { display: flex; flex-direction: column; gap: 12px; }
+
+  .metrics {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .metric {
+    background: var(--bg-2);
+    border-radius: var(--radius-md);
+    padding: 11px 13px;
+  }
+
+  .metric-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    color: var(--text-3);
+    margin-bottom: 4px;
+  }
+
+  .metric-value {
+    font-size: 19px;
+    font-weight: 500;
+    line-height: 1.2;
+    color: var(--text-1);
+  }
+
+  .metric-sub {
+    font-size: 11px;
+    color: var(--text-3);
+    margin-top: 3px;
+  }
+
+  .chart-wrap {
+    position: relative;
+    width: 100%;
+    height: 360px;
+  }
+
+  /* ── Responsive ─────────────────────────────── */
+  @media (max-width: 640px) {
+    .layout { grid-template-columns: 1fr; }
+    .sidebar { display: grid; grid-template-columns: 1fr 1fr; gap: 0 16px; }
+    .section-label, .divider, .source-note { grid-column: 1/-1; }
+    .legend { grid-column: 1/-1; flex-direction: row; flex-wrap: wrap; }
+    .metrics { grid-template-columns: repeat(2, 1fr); }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header>
+    <h1>Global primary energy demand, 2000–2050</h1>
+    <p>Adjust the three parameters to explore how GDP growth, population, and renewable energy ambition shape the future energy mix. Historical data from IEA / BP Statistical Review; projection uses a Kaya-identity-derived model.</p>
+  </header>
+
+  <div class="layout">
+
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <p class="section-label">Parameters</p>
+
+      <div class="param">
+        <div class="param-header">
+          <span>GDP growth</span>
+          <span id="v-gdp">2.5% / yr</span>
+        </div>
+        <input type="range" id="s-gdp" min="0.5" max="5.0" step="0.1" value="2.5">
+        <div class="range-labels"><span>0.5%</span><span>5.0%</span></div>
+      </div>
+
+      <div class="param">
+        <div class="param-header">
+          <span>Population growth</span>
+          <span id="v-pop">0.7% / yr</span>
+        </div>
+        <input type="range" id="s-pop" min="0.0" max="1.5" step="0.1" value="0.7">
+        <div class="range-labels"><span>0.0%</span><span>1.5%</span></div>
+      </div>
+
+      <div class="param">
+        <div class="param-header">
+          <span>Renewable ambition</span>
+          <span id="v-ren">Moderate</span>
+        </div>
+        <input type="range" id="s-ren" min="0" max="100" step="5" value="40">
+        <div class="range-labels"><span>BAU</span><span>Net zero</span></div>
+      </div>
+
+      <hr class="divider">
+      <p class="section-label">Energy mix</p>
+
+      <div class="legend" id="legend"></div>
+
+      <p class="source-note">Historical: IEA · BP Statistical Review<br>Projection: Kaya-derived model</p>
+    </aside>
+
+    <!-- Main panel -->
+    <div class="main">
+      <div class="metrics">
+        <div class="metric">
+          <div class="metric-label">2050 demand</div>
+          <div class="metric-value" id="m1">—</div>
+          <div class="metric-sub">exajoules</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">vs 2023</div>
+          <div class="metric-value" id="m2">—</div>
+          <div class="metric-sub">622 EJ baseline</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">Clean energy 2050</div>
+          <div class="metric-value" id="m3">—</div>
+          <div class="metric-sub">wind, solar, hydro, nuclear</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">CO₂ trend</div>
+          <div class="metric-value" id="m4">—</div>
+          <div class="metric-sub">vs 2023 emissions</div>
+        </div>
+      </div>
+
+      <div class="chart-wrap">
+        <canvas id="echart" role="img"
+          aria-label="Stacked area chart of global primary energy demand by source, 2000 to 2050">
+          Stacked area chart of global primary energy demand 2000–2050 by source: coal, oil, natural gas, nuclear, hydro, and wind and solar.
+        </canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const HIST = {
+  2000: { coal: 92,  oil: 148, gas: 88,  nuclear: 27, hydro: 26, wind: 5  },
+  2005: { coal: 120, oil: 160, gas: 100, nuclear: 28, hydro: 28, wind: 7  },
+  2010: { coal: 152, oil: 173, gas: 116, nuclear: 27, hydro: 31, wind: 13 },
+  2015: { coal: 163, oil: 183, gas: 127, nuclear: 28, hydro: 36, wind: 22 },
+  2020: { coal: 152, oil: 171, gas: 139, nuclear: 29, hydro: 39, wind: 38 },
+  2023: { coal: 164, oil: 190, gas: 145, nuclear: 30, hydro: 41, wind: 52 },
+};
+
+const dk = window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+const SRCS = [
+  { k: 'coal',    nm: 'Coal',         lc: '#888780', dc: '#C0BEB5' },
+  { k: 'oil',     nm: 'Oil',          lc: '#BA7517', dc: '#EF9F27' },
+  { k: 'gas',     nm: 'Natural gas',  lc: '#185FA5', dc: '#85B7EB' },
+  { k: 'nuclear', nm: 'Nuclear',      lc: '#534AB7', dc: '#AFA9EC' },
+  { k: 'hydro',   nm: 'Hydro',        lc: '#0F6E56', dc: '#5DCAA5' },
+  { k: 'wind',    nm: 'Wind & solar', lc: '#3B6D11', dc: '#97C459' },
+];
+
+function col(s) { return dk ? s.dc : s.lc; }
+
+function lp(a, b, t) { return a + (b - a) * t; }
+
+function hInterp(yr) {
+  const ks = Object.keys(HIST).map(Number).sort((a, b) => a - b);
+  if (yr <= ks[0])      return { ...HIST[ks[0]] };
+  if (yr >= ks.at(-1))  return { ...HIST[ks.at(-1)] };
+  for (let i = 0; i < ks.length - 1; i++) {
+    if (yr >= ks[i] && yr <= ks[i + 1]) {
+      const t = (yr - ks[i]) / (ks[i + 1] - ks[i]), r = {};
+      SRCS.forEach(s => { r[s.k] = lp(HIST[ks[i]][s.k], HIST[ks[i + 1]][s.k], t); });
+      return r;
+    }
+  }
+}
+
+function runModel(gdpR, popR, renAmb) {
+  const B   = HIST[2023];
+  const BT  = SRCS.reduce((s, x) => s + B[x.k], 0);
+  const rBase = B.wind / BT;
+  const rTgt  = 0.11 + (renAmb / 100) * 0.72;
+  const iBonus = (renAmb / 100) * 0.012;
+
+  return Array.from({ length: 51 }, (_, i) => {
+    const yr = 2000 + i;
+    if (yr <= 2023) {
+      const h = hInterp(yr), e = { yr };
+      SRCS.forEach(s => { e[s.k] = Math.round(h[s.k]); });
+      return e;
+    }
+    const t    = yr - 2023;
+    const gE   = Math.pow(1 + gdpR / 100, t * 0.55);
+    const pE   = Math.pow(1 + popR / 100, t * 0.25);
+    const iE   = Math.pow(1 - 0.015 - iBonus, t);
+    const tot  = BT * gE * pE * iE;
+    const prog = 1 - Math.pow(1 - Math.min(1, t / 27), 2);
+    const rShr = rBase + (rTgt - rBase) * prog;
+    const wind = tot * rShr;
+    const hydro = Math.min(65, B.hydro * Math.pow(1.008, t));
+    const nuc  = B.nuclear * Math.pow(1 + (renAmb / 100) * 0.025, t);
+    const fossil = Math.max(0, tot - wind - hydro - nuc);
+    const cr   = 0.022 + (renAmb / 100) * 0.025;
+    const or_  = 0.008 + (renAmb / 100) * 0.012;
+    const gr   = 0.003 + (renAmb / 100) * 0.008;
+    const cR   = B.coal * Math.pow(1 - cr, t);
+    const oR   = B.oil  * Math.pow(1 - or_, t);
+    const gR   = B.gas  * Math.pow(1 - gr, t);
+    const fR   = cR + oR + gR;
+    const sc   = fR > 0 ? fossil / fR : 0;
+    return {
+      yr,
+      coal:    Math.max(0, Math.round(cR * sc)),
+      oil:     Math.max(0, Math.round(oR * sc)),
+      gas:     Math.max(0, Math.round(gR * sc)),
+      nuclear: Math.round(nuc),
+      hydro:   Math.round(hydro),
+      wind:    Math.round(wind),
+    };
+  });
+}
+
+// Build legend (reversed so top-of-stack = top-of-legend)
+const legEl = document.getElementById('legend');
+[...SRCS].reverse().forEach(s => {
+  const d = document.createElement('div');
+  d.className = 'legend-item';
+  d.innerHTML = `<span class="legend-swatch" style="background:${col(s)}"></span>${s.nm}`;
+  legEl.appendChild(d);
+});
+
+// Now-line plugin
+const nowPlugin = {
+  id: 'nowLine',
+  afterDraw(ch) {
+    const { ctx, chartArea: a, scales: sc } = ch;
+    if (!sc.x) return;
+    const x = sc.x.left + (sc.x.right - sc.x.left) * (23 / 50);
+    ctx.save();
+    ctx.strokeStyle = dk ? 'rgba(200,200,200,0.22)' : 'rgba(80,80,80,0.22)';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([3, 4]);
+    ctx.beginPath(); ctx.moveTo(x, a.top); ctx.lineTo(x, a.bottom); ctx.stroke();
+    const fc = dk ? 'rgba(180,180,180,0.5)' : 'rgba(100,100,100,0.5)';
+    ctx.fillStyle = fc;
+    ctx.font = '10px system-ui, sans-serif';
+    ctx.textAlign = 'right';
+    ctx.fillText('← hist', x - 5, a.top + 12);
+    ctx.textAlign = 'left';
+    ctx.fillText('proj →', x + 5, a.top + 12);
+    ctx.restore();
+  }
+};
+
+const labels = Array.from({ length: 51 }, (_, i) => 2000 + i);
+
+function mkDs(data) {
+  return SRCS.map(s => ({
+    label: s.nm,
+    data: data.map(d => d[s.k]),
+    backgroundColor: col(s) + 'b0',
+    borderColor: col(s),
+    borderWidth: 0.5,
+    fill: true,
+    pointRadius: 0,
+    tension: 0.25,
+  }));
+}
+
+let curData = runModel(2.5, 0.7, 40);
+
+const ch = new Chart(document.getElementById('echart'), {
+  type: 'line',
+  data: { labels, datasets: mkDs(curData) },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    interaction: { mode: 'index', intersect: false },
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        backgroundColor: dk ? '#1a2130' : '#ffffff',
+        titleColor:      dk ? '#e2e8f0' : '#111827',
+        bodyColor:       dk ? '#9aa5b4' : '#4b5563',
+        borderColor:     dk ? '#2a3550' : '#e5e7eb',
+        borderWidth: 1,
+        padding: 10,
+        itemSort: (a, b) => b.datasetIndex - a.datasetIndex,
+        callbacks: {
+          title: items => `${items[0].label}${Number(items[0].label) > 2023 ? ' (projected)' : ' (historical)'}`,
+          label: item  => `  ${item.dataset.label}: ${item.raw} EJ`,
+          afterBody(items) {
+            const tot = items.reduce((s, i) => s + (i.raw || 0), 0);
+            return [`  ─────────────────────`, `  Total: ${tot} EJ`];
+          }
+        }
+      }
+    },
+    scales: {
+      x: {
+        ticks: {
+          callback: (v, i) => {
+            const yr = 2000 + i;
+            return [2000, 2005, 2010, 2015, 2020, 2025, 2030, 2040, 2050].includes(yr) ? yr : null;
+          },
+          maxRotation: 0,
+          font: { size: 11 },
+          color: dk ? '#7a8aa0' : '#999',
+          autoSkip: false,
+        },
+        grid:   { color: dk ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)', drawBorder: false },
+        border: { display: false },
+      },
+      y: {
+        stacked: true,
+        ticks:  { font: { size: 11 }, color: dk ? '#7a8aa0' : '#999' },
+        grid:   { color: dk ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)', drawBorder: false },
+        border: { display: false },
+        title:  { display: true, text: 'EJ (exajoules)', font: { size: 11 }, color: dk ? '#7a8aa0' : '#999' },
+      }
+    }
+  },
+  plugins: [nowPlugin]
+});
+
+const REN_LABELS = ['Low', 'Moderate', 'High', 'Aggressive'];
+
+function updateMetrics(data) {
+  const d23 = data.find(d => d.yr === 2023);
+  const d50 = data.at(-1);
+  const t23 = SRCS.reduce((s, x) => s + d23[x.k], 0);
+  const t50 = SRCS.reduce((s, x) => s + d50[x.k], 0);
+  const clean = (d50.wind + d50.hydro + d50.nuclear) / t50;
+  const chg   = (t50 / t23 - 1) * 100;
+  const co23  = d23.coal * 95 + d23.oil * 70 + d23.gas * 55;
+  const co50  = d50.coal * 95 + d50.oil * 70 + d50.gas * 55;
+  const coChg = (co50 / co23 - 1) * 100;
+  const dan   = dk ? '#F7C1C1' : '#A32D2D';
+  const suc   = dk ? '#9FE1CB' : '#0F6E56';
+  const neu   = dk ? '#e2e8f0' : '#111827';
+
+  const m1 = document.getElementById('m1');
+  m1.textContent = `${Math.round(t50)} EJ`;
+  m1.style.color = neu;
+
+  const m2 = document.getElementById('m2');
+  m2.textContent = `${chg >= 0 ? '+' : ''}${Math.round(chg)}%`;
+  m2.style.color = chg > 20 ? dan : chg < -5 ? suc : neu;
+
+  const m3 = document.getElementById('m3');
+  m3.textContent = `${Math.round(clean * 100)}%`;
+  m3.style.color = clean > 0.65 ? suc : clean < 0.35 ? dan : neu;
+
+  const m4 = document.getElementById('m4');
+  m4.textContent = `${coChg >= 0 ? '+' : ''}${Math.round(coChg)}%`;
+  m4.style.color = coChg > 0 ? dan : suc;
+}
+
+function update() {
+  const gdp = parseFloat(document.getElementById('s-gdp').value);
+  const pop  = parseFloat(document.getElementById('s-pop').value);
+  const ren  = parseInt(document.getElementById('s-ren').value);
+
+  document.getElementById('v-gdp').textContent = gdp.toFixed(1) + '% / yr';
+  document.getElementById('v-pop').textContent = pop.toFixed(1) + '% / yr';
+  document.getElementById('v-ren').textContent = REN_LABELS[ren < 25 ? 0 : ren < 50 ? 1 : ren < 75 ? 2 : 3];
+
+  curData = runModel(gdp, pop, ren);
+  ch.data.datasets = mkDs(curData);
+  ch.update('none');
+  updateMetrics(curData);
+}
+
+['s-gdp', 's-pop', 's-ren'].forEach(id =>
+  document.getElementById(id).addEventListener('input', update)
+);
+update();
+</script>
+</body>
+</html>

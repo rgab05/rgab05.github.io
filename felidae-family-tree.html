@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Felidae Family Tree</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: system-ui, sans-serif; background: #f5f5f3; color: #1a1a18; padding: 2rem; min-height: 100vh; }
+  h1 { font-size: 22px; font-weight: 500; margin-bottom: 0.25rem; }
+  .subtitle { font-size: 14px; color: #666; margin-bottom: 2rem; }
+  .breadcrumb { display: flex; align-items: center; gap: 6px; font-size: 13px; color: #888; margin-bottom: 1.5rem; flex-wrap: wrap; }
+  .breadcrumb span { cursor: pointer; color: #185FA5; }
+  .breadcrumb span:hover { text-decoration: underline; }
+  .breadcrumb .sep { color: #bbb; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px; }
+  .card { background: #fff; border: 0.5px solid rgba(0,0,0,0.12); border-radius: 12px; padding: 1rem 1.25rem; cursor: pointer; transition: border-color 0.15s; }
+  .card:hover { border-color: rgba(0,0,0,0.35); }
+  .card .emoji { font-size: 24px; margin-bottom: 8px; }
+  .card .name { font-size: 15px; font-weight: 500; color: #1a1a18; margin: 0 0 2px; }
+  .card .sub { font-size: 12px; color: #888; font-style: italic; margin: 0 0 6px; }
+  .card .count { font-size: 11px; color: #aaa; }
+  .status-badge { display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 999px; font-weight: 500; margin-bottom: 8px; }
+  .lc { background: #EAF3DE; color: #3B6D11; }
+  .nt { background: #FAEEDA; color: #854F0B; }
+  .vu { background: #FAEEDA; color: #854F0B; }
+  .en { background: #FAECE7; color: #993C1D; }
+  .cr { background: #FCEBEB; color: #A32D2D; }
+  .dd { background: #f0f0ee; color: #666; }
+  .info-card { background: #f0f0ee; border: 0.5px solid rgba(0,0,0,0.1); border-radius: 12px; padding: 1.25rem; margin-top: 1rem; }
+  .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; }
+  .info-item { font-size: 12px; }
+  .info-item .label { color: #888; margin-bottom: 2px; }
+  .info-item .value { color: #1a1a18; font-weight: 500; }
+  .section-title { font-size: 11px; font-weight: 500; color: #888; margin: 0 0 10px; letter-spacing: 0.04em; text-transform: uppercase; }
+  .selected-card { border-color: #185FA5 !important; border-width: 1.5px !important; }
+  .fact { font-size: 13px; color: #666; line-height: 1.6; margin-top: 10px; padding-top: 10px; border-top: 0.5px solid rgba(0,0,0,0.1); }
+
+  @media (prefers-color-scheme: dark) {
+    body { background: #1a1a18; color: #f0f0ee; }
+    .card { background: #2c2c2a; border-color: rgba(255,255,255,0.1); }
+    .card:hover { border-color: rgba(255,255,255,0.3); }
+    .card .name { color: #f0f0ee; }
+    .card .sub { color: #888; }
+    .card .count { color: #666; }
+    .info-card { background: #222220; border-color: rgba(255,255,255,0.08); }
+    .info-item .value { color: #f0f0ee; }
+    .breadcrumb { color: #666; }
+    .subtitle { color: #888; }
+  }
+</style>
+</head>
+<body>
+
+<h1>Felidae Family Tree</h1>
+<p class="subtitle">Click a genus to explore species, then subspecies</p>
+<div id="app"></div>
+
+<script>
+const data = {
+  genera: [
+    {
+      id: "panthera", name: "Panthera", emoji: "🐆", commonName: "Roaring Cats",
+      description: "The 'big five' — the only cats capable of roaring",
+      species: [
+        { id: "leo", name: "Lion", latin: "Panthera leo", status: "vu", range: "Sub-Saharan Africa, India",
+          subspecies: [
+            { name: "African Lion", latin: "P. l. leo", status: "vu", population: "~20,000", range: "Sub-Saharan Africa", weight: "120–190 kg", fact: "The only truly social wild cat, living in prides of up to 30 individuals. Males are the only cats with a mane." },
+            { name: "Asiatic Lion", latin: "P. l. persica", status: "en", population: "~600", range: "Gir Forest, India", weight: "160–190 kg", fact: "Once roamed from Greece to Bangladesh. Today confined to a single forest in Gujarat. A second population site is being established as insurance against disease." }
+          ]
+        },
+        { id: "tigris", name: "Tiger", latin: "Panthera tigris", status: "en", range: "South & Southeast Asia, Russia",
+          subspecies: [
+            { name: "Bengal Tiger", latin: "P. t. tigris", status: "en", population: "~2,500", range: "India, Bangladesh, Nepal", weight: "140–300 kg", fact: "The most numerous tiger subspecies. About 70% of all wild tigers live in India. White tigers are a colour morph of the Bengal tiger." },
+            { name: "Amur (Siberian) Tiger", latin: "P. t. altaica", status: "en", population: "~500", range: "Russian Far East", weight: "180–310 kg", fact: "The largest wild cat on Earth. They have a layer of fat along their belly and flanks to insulate against the brutal Siberian winters." },
+            { name: "Sumatran Tiger", latin: "P. t. sumatrae", status: "cr", population: "~400", range: "Sumatra, Indonesia", weight: "75–140 kg", fact: "The smallest living tiger subspecies. The striping is notably closer together than in other subspecies, possibly as camouflage in dense rainforest." },
+            { name: "Malayan Tiger", latin: "P. t. jacksoni", status: "cr", population: "~80–120", range: "Peninsular Malaysia", weight: "100–130 kg", fact: "Only formally recognised as a distinct subspecies in 2004. It is the national animal of Malaysia and features on the country's coat of arms." }
+          ]
+        },
+        { id: "pardus", name: "Leopard", latin: "Panthera pardus", status: "vu", range: "Africa, Central & South Asia",
+          subspecies: [
+            { name: "African Leopard", latin: "P. p. pardus", status: "vu", population: "Unknown", range: "Sub-Saharan Africa", weight: "60–90 kg", fact: "The most adaptable big cat. Found in rainforest, desert, mountain and urban fringe environments. Known to haul prey twice their weight up into trees." },
+            { name: "Amur Leopard", latin: "P. p. orientalis", status: "cr", population: "~100", range: "Russian Far East, China", weight: "32–48 kg", fact: "One of the rarest cats on Earth. Their spots are larger and more widely spaced than other subspecies — an adaptation for camouflage in snowy environments." },
+            { name: "Arabian Leopard", latin: "P. p. nimr", status: "cr", population: "<200", range: "Arabian Peninsula", weight: "20–30 kg", fact: "The smallest leopard subspecies. Critically endangered, they survive in fragmented pockets of the Hijaz and Dhofar mountains." }
+          ]
+        },
+        { id: "onca", name: "Jaguar", latin: "Panthera onca", status: "nt", range: "Central & South America",
+          subspecies: [
+            { name: "Amazonian Jaguar", latin: "P. o. onca", status: "nt", population: "Unknown", range: "Amazon Basin", weight: "56–96 kg", fact: "The largest jaguar subspecies. Jaguars have the most powerful bite of any big cat relative to size — strong enough to pierce turtle shells and caiman skulls." },
+            { name: "Arizonian Jaguar", latin: "P. o. arizonensis", status: "en", population: "<30 in US", range: "US Southwest & Mexico", weight: "45–70 kg", fact: "This population was extirpated from the US by the mid-20th century. A small number of males have been recorded crossing from Mexico in recent years." }
+          ]
+        },
+        { id: "uncia", name: "Snow Leopard", latin: "Panthera uncia", status: "vu", range: "Central Asian mountains",
+          subspecies: [
+            { name: "Snow Leopard", latin: "P. uncia (monotypic)", status: "vu", population: "2,500–6,000", range: "Himalayas, Hindu Kush, Altai", weight: "22–55 kg", fact: "No confirmed subspecies are recognised. Their long, thick tail (nearly as long as their body) is used for balance on rocky terrain and as a warm scarf while sleeping." }
+          ]
+        }
+      ]
+    },
+    {
+      id: "neofelis", name: "Neofelis", emoji: "🐈", commonName: "Clouded Leopards",
+      description: "A separate genus bridging big and small cats",
+      species: [
+        { id: "nebulosa", name: "Clouded Leopard", latin: "Neofelis nebulosa", status: "vu", range: "Himalayas to Southeast Asia",
+          subspecies: [
+            { name: "Indochinese Clouded Leopard", latin: "N. n. nebulosa", status: "vu", population: "Unknown", range: "China, Indochina", weight: "11–20 kg", fact: "Has the longest canine teeth relative to skull size of any living cat — sometimes compared to prehistoric sabre-toothed cats. An expert tree climber, capable of running headfirst down trunks." },
+            { name: "Formosan Clouded Leopard", latin: "N. n. brachyurus", status: "cr", population: "Possibly 0", range: "Taiwan", weight: "~16 kg", fact: "Declared locally extinct in 2013 after 13 years of camera-trap surveys found no individuals. A 2019 report of possible sightings remains unverified." }
+          ]
+        },
+        { id: "diardi", name: "Sunda Clouded Leopard", latin: "Neofelis diardi", status: "vu", range: "Borneo and Sumatra",
+          subspecies: [
+            { name: "Bornean Clouded Leopard", latin: "N. d. borneensis", status: "vu", population: "Unknown", range: "Borneo", weight: "12–25 kg", fact: "Formally described as a separate species only in 2006. Has slightly darker colouration and smaller cloud markings than its mainland relatives." },
+            { name: "Sumatran Clouded Leopard", latin: "N. d. diardi", status: "vu", population: "Unknown", range: "Sumatra", weight: "12–22 kg", fact: "Threatened largely by deforestation for palm oil plantations. The loss of forest connectivity is isolating populations across the island." }
+          ]
+        }
+      ]
+    },
+    {
+      id: "acinonyx", name: "Acinonyx", emoji: "🐆", commonName: "Cheetah",
+      description: "The world's fastest land animal — a genus of one",
+      species: [
+        { id: "jubatus", name: "Cheetah", latin: "Acinonyx jubatus", status: "vu", range: "Africa, Iran",
+          subspecies: [
+            { name: "East African Cheetah", latin: "A. j. jubatus", status: "vu", population: "~4,000", range: "Tanzania, Kenya, Uganda", weight: "35–65 kg", fact: "Can accelerate from 0 to 100 km/h in about 3 seconds — faster than most sports cars. After a chase, must rest 15–30 minutes before eating." },
+            { name: "Asiatic Cheetah", latin: "A. j. venaticus", status: "cr", population: "<50", range: "Iran", weight: "34–54 kg", fact: "Critically endangered, surviving only in Iran. Once ranged from the Middle East to India — the word 'cheetah' comes from the Sanskrit word for 'spotted one'." },
+            { name: "South African Cheetah", latin: "A. j. jubatus", status: "vu", population: "~4,000", range: "Southern Africa", weight: "40–65 kg", fact: "The 'king cheetah', a rare colour morph with blotchy merged spots and stripes, occurs in this population. It is caused by a recessive gene, not a subspecies." },
+            { name: "Northwest African Cheetah", latin: "A. j. hecki", status: "cr", population: "<250", range: "Sahara & Sahel", weight: "28–47 kg", fact: "Paler and smaller than other subspecies — adaptations for the desert. Largely nocturnal, unlike other cheetahs, to avoid daytime heat." }
+          ]
+        }
+      ]
+    },
+    {
+      id: "lynx", name: "Lynx", emoji: "🐱", commonName: "Lynxes",
+      description: "Medium-sized cats with distinctive ear tufts and short tails",
+      species: [
+        { id: "lynx", name: "Eurasian Lynx", latin: "Lynx lynx", status: "lc", range: "Europe to Central Asia",
+          subspecies: [
+            { name: "Boreal Lynx", latin: "L. l. lynx", status: "lc", population: "~50,000", range: "Scandinavia, Russia", weight: "18–30 kg", fact: "The largest lynx species. Can take prey up to four times its own size, including reindeer. Successfully reintroduced to several European countries after local extinction." },
+            { name: "Balkan Lynx", latin: "L. l. balcanicus", status: "cr", population: "<50", range: "North Macedonia, Albania", weight: "18–25 kg", fact: "One of Europe's most endangered mammals. Isolated from other populations, the Balkan lynx population has been critically small for decades." }
+          ]
+        },
+        { id: "canadensis", name: "Canada Lynx", latin: "Lynx canadensis", status: "lc", range: "Canada, Northern USA",
+          subspecies: [
+            { name: "Canada Lynx", latin: "L. c. canadensis", status: "lc", population: "Unknown", range: "Canada, Alaska, US Rockies", weight: "8–14 kg", fact: "So specialised that their population cycles almost perfectly mirror those of snowshoe hares, their primary prey. When hares crash, lynx populations collapse within 1–2 years." }
+          ]
+        },
+        { id: "pardinus", name: "Iberian Lynx", latin: "Lynx pardinus", status: "en", range: "Iberian Peninsula",
+          subspecies: [
+            { name: "Iberian Lynx", latin: "L. pardinus (monotypic)", status: "en", population: "~1,100 (recovering)", range: "Spain, Portugal", weight: "7–15 kg", fact: "The world's most endangered cat species as recently as 2002, when only ~94 individuals remained. A major conservation programme has brought the population back from the brink — a remarkable success story." }
+          ]
+        },
+        { id: "rufus", name: "Bobcat", latin: "Lynx rufus", status: "lc", range: "North America",
+          subspecies: [
+            { name: "Desert Bobcat", latin: "L. r. baileyi", status: "lc", population: "Unknown", range: "US Southwest, Mexico", weight: "4–9 kg", fact: "Paler than northern bobcats — an adaptation for desert camouflage. Despite their small size, can take prey as large as young deer." },
+            { name: "Eastern Bobcat", latin: "L. r. rufus", status: "lc", population: "Unknown", range: "Eastern USA", weight: "6–12 kg", fact: "The most common wild cat in North America. Supremely adaptable, living in swamps, forests, deserts, and suburban edges. Largely nocturnal and rarely seen." }
+          ]
+        }
+      ]
+    },
+    {
+      id: "puma", name: "Puma", emoji: "🦁", commonName: "Cougars & Jaguarundi",
+      description: "Large and small, spanning much of the Americas",
+      species: [
+        { id: "concolor", name: "Cougar", latin: "Puma concolor", status: "lc", range: "Americas — widest range of any wild cat",
+          subspecies: [
+            { name: "North American Cougar", latin: "P. c. couguar", status: "lc", population: "Unknown", range: "Western USA, Canada", weight: "53–100 kg", fact: "Also known as mountain lion, puma, or panther — it holds the Guinness record for the animal with the most names in English. Can leap 5.5 metres vertically." },
+            { name: "Florida Panther", latin: "P. c. couguar", status: "cr", population: "~200", range: "Southern Florida", weight: "45–72 kg", fact: "One of the most endangered mammals in the US. A successful genetic rescue in 1995 — introducing Texas females — reversed a dangerous inbreeding crisis." },
+            { name: "South American Cougar", latin: "P. c. concolor", status: "lc", population: "Unknown", range: "South America", weight: "60–120 kg", fact: "The Andean population, sometimes called the Andean mountain lion, lives at elevations up to 5,800 metres — the highest altitude of any wild cat." }
+          ]
+        },
+        { id: "yagouaroundi", name: "Jaguarundi", latin: "Herpailurus yagouaroundi", status: "lc", range: "Mexico to South America",
+          subspecies: [
+            { name: "Northern Jaguarundi", latin: "H. y. tolteca", status: "lc", population: "Unknown", range: "Mexico, Central America", weight: "3–9 kg", fact: "Looks more like an otter or weasel than a cat. Unlike most cats, they are highly active during the day. They purr, whistle, and chirp — but do not roar or meow." }
+          ]
+        }
+      ]
+    },
+    {
+      id: "felis", name: "Felis", emoji: "🐱", commonName: "Small Cats & Domestic Cat",
+      description: "Includes the domestic cat and its wild relatives",
+      species: [
+        { id: "silvestris", name: "Wildcat", latin: "Felis silvestris", status: "lc", range: "Europe, Africa, Asia",
+          subspecies: [
+            { name: "European Wildcat", latin: "F. s. silvestris", status: "lc", population: "Unknown", range: "Europe", weight: "3–8 kg", fact: "Notoriously difficult to tame — attempts rarely succeeded historically. Hybridisation with domestic cats is a major conservation threat to pure wildcat populations." },
+            { name: "African Wildcat", latin: "F. s. lybica", status: "lc", population: "Unknown", range: "Africa, Middle East", weight: "2.7–6 kg", fact: "The ancestor of all domestic cats. Archaeological evidence suggests domestication occurred ~10,000 years ago in the Fertile Crescent, linked to the rise of grain storage." },
+            { name: "Domestic Cat", latin: "F. s. catus", status: "domestic", population: "~600 million", range: "Worldwide", weight: "3.5–5 kg", fact: "Technically a subspecies of wildcat. Despite thousands of years of domestication, domestic cats are near-identical genetically to African wildcats — and retain most of their hunting instincts." }
+          ]
+        },
+        { id: "margarita", name: "Sand Cat", latin: "Felis margarita", status: "lc", range: "Sahara, Middle East, Central Asia",
+          subspecies: [
+            { name: "Saharan Sand Cat", latin: "F. m. margarita", status: "lc", population: "Unknown", range: "Sahara Desert", weight: "1.5–3.5 kg", fact: "Can survive in temperatures ranging from −5°C to 52°C. Their furry paw pads protect them from scorching sand and help them walk without sinking. Can go weeks without drinking water." }
+          ]
+        }
+      ]
+    },
+    {
+      id: "leopardus", name: "Leopardus", emoji: "🐆", commonName: "South American Spotted Cats",
+      description: "A diverse group of small spotted cats from the Americas",
+      species: [
+        { id: "pardalis", name: "Ocelot", latin: "Leopardus pardalis", status: "lc", range: "Southern USA to South America",
+          subspecies: [
+            { name: "Northern Ocelot", latin: "L. p. albescens", status: "lc", population: "<50 in US", range: "Texas, Mexico", weight: "6–15 kg", fact: "Once hunted nearly to extinction for their coat. Today they face fragmentation — a highway in southern Texas divides a population too small to be genetically viable without connectivity." },
+            { name: "South American Ocelot", latin: "L. p. pardalis", status: "lc", population: "Unknown", range: "South America", weight: "8–18 kg", fact: "A skilled swimmer and climber. They are strictly nocturnal and have excellent night vision — their eyes reflect up to 6× more light than human eyes." }
+          ]
+        },
+        { id: "wiedii", name: "Margay", latin: "Leopardus wiedii", status: "nt", range: "Mexico to Argentina",
+          subspecies: [
+            { name: "Margay", latin: "L. w. wiedii (monotypic)", status: "nt", population: "Unknown", range: "Central & South America", weight: "2.6–4 kg", fact: "One of only two cat species whose ankle joints can rotate 180°, allowing them to descend trees headfirst. Has been documented mimicking the calls of baby monkeys to lure prey." }
+          ]
+        }
+      ]
+    },
+    {
+      id: "caracal", name: "Caracal", emoji: "🐱", commonName: "Caracal & Serval",
+      description: "Mid-sized cats with exceptional leaping ability",
+      species: [
+        { id: "caracal", name: "Caracal", latin: "Caracal caracal", status: "lc", range: "Africa, Middle East, Central Asia",
+          subspecies: [
+            { name: "African Caracal", latin: "C. c. caracal", status: "lc", population: "Unknown", range: "Sub-Saharan Africa", weight: "8–19 kg", fact: "Can leap over 3 metres vertically to snatch birds from the air. Historically kept in India and Persia as hunting companions, able to be trained to catch birds and small deer." },
+            { name: "Turkestan Caracal", latin: "C. c. michaelis", status: "lc", population: "Unknown", range: "Central Asia", weight: "11–20 kg", fact: "The northernmost and one of the largest caracal populations. Faces threats from persecution as a livestock predator and habitat loss in arid Central Asian steppes." }
+          ]
+        },
+        { id: "serval", name: "Serval", latin: "Leptailurus serval", status: "lc", range: "Sub-Saharan Africa",
+          subspecies: [
+            { name: "Common Serval", latin: "L. s. serval", status: "lc", population: "Unknown", range: "Sub-Saharan Africa", weight: "9–18 kg", fact: "Has the largest ears relative to head size of any cat. Their hearing is so precise they can locate prey under snow or in long grass without seeing it. Successful in about 50% of hunts — the highest rate of any wild cat." }
+          ]
+        }
+      ]
+    }
+  ]
+};
+
+const statusLabels = {
+  lc: "Least concern", nt: "Near threatened", vu: "Vulnerable",
+  en: "Endangered", cr: "Critically endangered", dd: "Data deficient", domestic: "Domesticated"
+};
+
+let state = { level: "genus", genus: null, species: null, subspecies: null };
+
+function render() {
+  const app = document.getElementById("app");
+  app.innerHTML = "";
+
+  const bc = document.createElement("div");
+  bc.className = "breadcrumb";
+  bc.innerHTML = `<span onclick="go('genus')">Felidae</span>`;
+  if (state.genus) bc.innerHTML += `<span class="sep">›</span><span onclick="go('species')">${state.genus.name}</span>`;
+  if (state.species) bc.innerHTML += `<span class="sep">›</span><span onclick="go('subspecies')">${state.species.name}</span>`;
+  app.appendChild(bc);
+
+  if (state.level === "genus") renderGenus(app);
+  else if (state.level === "species") renderSpecies(app);
+  else renderSubspecies(app);
+}
+
+function renderGenus(app) {
+  const t = document.createElement("p");
+  t.className = "section-title";
+  t.textContent = `${data.genera.length} genera · Click to explore`;
+  app.appendChild(t);
+
+  const grid = document.createElement("div");
+  grid.className = "grid";
+  data.genera.forEach(g => {
+    const c = document.createElement("div");
+    c.className = "card";
+    const speciesCount = g.species.length;
+    const subCount = g.species.reduce((a, s) => a + s.subspecies.length, 0);
+    c.innerHTML = `<div class="emoji">${g.emoji}</div><p class="name">${g.name}</p><p class="sub">${g.commonName}</p><p class="count">${speciesCount} species · ${subCount} subspecies</p>`;
+    c.onclick = () => { state.genus = g; state.level = "species"; render(); };
+    grid.appendChild(c);
+  });
+  app.appendChild(grid);
+}
+
+function renderSpecies(app) {
+  const g = state.genus;
+  const t = document.createElement("p");
+  t.className = "section-title";
+  t.textContent = `${g.species.length} species in ${g.name} · Click to explore subspecies`;
+  app.appendChild(t);
+
+  const grid = document.createElement("div");
+  grid.className = "grid";
+  g.species.forEach(s => {
+    const c = document.createElement("div");
+    c.className = "card";
+    const sc = s.status === "domestic" ? "lc" : s.status;
+    c.innerHTML = `<span class="status-badge ${sc}">${statusLabels[s.status]}</span><p class="name">${s.name}</p><p class="sub">${s.latin}</p><p class="count">${s.subspecies.length} subspecies · ${s.range}</p>`;
+    c.onclick = () => { state.species = s; state.subspecies = s.subspecies[0]; state.level = "subspecies"; render(); };
+    grid.appendChild(c);
+  });
+  app.appendChild(grid);
+}
+
+function renderSubspecies(app) {
+  const s = state.species;
+  const t = document.createElement("p");
+  t.className = "section-title";
+  t.textContent = `${s.subspecies.length} subspecies · Click for details`;
+  app.appendChild(t);
+
+  const grid = document.createElement("div");
+  grid.className = "grid";
+  s.subspecies.forEach(sub => {
+    const c = document.createElement("div");
+    c.className = "card" + (state.subspecies === sub ? " selected-card" : "");
+    const sc = sub.status === "domestic" ? "lc" : sub.status;
+    c.innerHTML = `<span class="status-badge ${sc}">${statusLabels[sub.status]}</span><p class="name">${sub.name}</p><p class="sub">${sub.latin}</p><p class="count">${sub.range}</p>`;
+    c.onclick = () => { state.subspecies = sub; render(); };
+    grid.appendChild(c);
+  });
+  app.appendChild(grid);
+
+  if (state.subspecies) {
+    const sub = state.subspecies;
+    const ic = document.createElement("div");
+    ic.className = "info-card";
+    const sc = sub.status === "domestic" ? "lc" : sub.status;
+    ic.innerHTML = `
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+        <span style="font-size:15px;font-weight:500">${sub.name}</span>
+        <span class="status-badge ${sc}" style="margin:0">${statusLabels[sub.status]}</span>
+      </div>
+      <p style="font-size:12px;color:#888;font-style:italic;margin:0 0 10px">${sub.latin}</p>
+      <div class="info-grid">
+        <div class="info-item"><div class="label">Population</div><div class="value">${sub.population}</div></div>
+        <div class="info-item"><div class="label">Weight</div><div class="value">${sub.weight}</div></div>
+        <div class="info-item" style="grid-column:1/-1"><div class="label">Range</div><div class="value">${sub.range}</div></div>
+      </div>
+      <p class="fact">${sub.fact}</p>`;
+    app.appendChild(ic);
+  }
+}
+
+function go(level) {
+  if (level === "genus") { state = { level: "genus", genus: null, species: null, subspecies: null }; }
+  else if (level === "species") { state.level = "species"; state.species = null; state.subspecies = null; }
+  else if (level === "subspecies") { state.level = "subspecies"; state.subspecies = state.species.subspecies[0]; }
+  render();
+}
+
+render();
+</script>
+</body>
+</html>

@@ -41,11 +41,6 @@ body { font-family: system-ui, sans-serif; background: #f5f5f3; color: #1a1a18; 
 .q-header { font-size: 12px; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: #aaa; margin-bottom: 1rem; }
 .q-card { background: #fff; border: 0.5px solid rgba(0,0,0,0.1); border-radius: 16px; overflow: hidden; margin-bottom: 1.25rem; }
 .q-img-wrap { width: 100%; height: 260px; overflow: hidden; position: relative; display: flex; align-items: center; justify-content: center; background: #e8e8e6; }
-.q-img-wrap img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity .4s; }
-.q-img-wrap img.loaded { opacity: 1; }
-.q-img-placeholder { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; }
-.q-img-placeholder svg { opacity: 0.18; }
-.q-img-placeholder span { font-size: 12px; color: #bbb; }
 .q-body { padding: 1.25rem 1.25rem 1rem; }
 .q-prompt { font-size: 18px; font-weight: 600; margin-bottom: 1rem; line-height: 1.4; }
 .clue-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
@@ -510,29 +505,31 @@ function renderQuestion() {
   card.innerHTML = '';
 
   if (difficulty === 'easy') {
-    // Photo + minimal prompt
-    const imgWrap = document.createElement('div');
-    imgWrap.className = 'q-img-wrap';
+    // Image container — fully inline styled, no CSS class rules that can override
+    const imgDiv = document.createElement('div');
+    imgDiv.style.cssText = 'width:100%;height:260px;background:#e8e8e6;position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center;';
 
-    // Placeholder sits in absolute centre, behind the img
-    const placeholder = document.createElement('div');
-    placeholder.className = 'q-img-placeholder';
-    placeholder.style.cssText = 'position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;z-index:0;';
-    placeholder.innerHTML = `<svg width="60" height="60" viewBox="0 0 100 90" xmlns="http://www.w3.org/2000/svg"><polygon points="28,34 16,6 38,26" fill="#aaa"/><polygon points="72,34 84,6 62,26" fill="#aaa"/><circle cx="50" cy="42" r="22" fill="#aaa"/><ellipse cx="48" cy="72" rx="26" ry="16" fill="#aaa"/></svg><span style="font-size:12px;color:#bbb">Loading image…</span>`;
-    imgWrap.appendChild(placeholder);
-
-    // img on top; set onload BEFORE src to avoid cache race condition
-    const img = document.createElement('img');
-    img.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity .45s;z-index:1;';
-    img.onload  = () => { img.style.opacity = '1'; placeholder.style.display = 'none'; };
-    img.onerror = () => { placeholder.querySelector('span').textContent = 'No image available'; };
-    imgWrap.appendChild(img);
-    card.appendChild(imgWrap);
+    // Placeholder visible until image loads
+    const ph = document.createElement('div');
+    ph.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:8px;pointer-events:none;';
+    ph.innerHTML = `<svg width="56" height="56" viewBox="0 0 100 90" xmlns="http://www.w3.org/2000/svg" style="opacity:0.2"><polygon points="28,34 16,6 38,26" fill="#555"/><polygon points="72,34 84,6 62,26" fill="#555"/><circle cx="50" cy="42" r="22" fill="#555"/><ellipse cx="48" cy="72" rx="26" ry="16" fill="#555"/><path d="M73,75 Q90,62 85,44" stroke="#555" stroke-width="7" fill="none" stroke-linecap="round"/></svg><span style="font-size:12px;color:#bbb;">Loading image…</span>`;
+    imgDiv.appendChild(ph);
+    card.appendChild(imgDiv);
 
     if (item.wiki) {
       wikiImg(item.wiki).then(url => {
-        if (url) { img.src = url; }
-        else { placeholder.querySelector('span').textContent = 'No image available'; }
+        if (url) {
+          const img = document.createElement('img');
+          img.alt = item.name;
+          img.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity 0.4s;';
+          // Attach onload BEFORE setting src
+          img.onload  = () => { img.style.opacity = '1'; ph.style.display = 'none'; };
+          img.onerror = () => { ph.querySelector('span').textContent = 'No image available'; };
+          imgDiv.appendChild(img);
+          img.src = url; // set src last — after onload is wired and img is in the DOM
+        } else {
+          ph.querySelector('span').textContent = 'No image available';
+        }
       });
     }
 

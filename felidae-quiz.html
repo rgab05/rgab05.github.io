@@ -416,18 +416,40 @@ GENERA.forEach(g => {
 });
 
 // ─────────────────────────────────────────────
-// WIKIPEDIA IMAGE CACHE
+// WIKIPEDIA IMAGE CACHE  (JSONP — no fetch, bypasses CSP connect-src)
 // ─────────────────────────────────────────────
 const imgCache = {};
-async function wikiImg(title) {
-  if (!title) return null;
-  if (imgCache[title] !== undefined) return imgCache[title];
-  try {
-    const r = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(title)}`);
-    const j = await r.json();
-    const url = j.thumbnail?.source?.replace(/\/\d+px-/, "/600px-") ?? null;
-    imgCache[title] = url; return url;
-  } catch { imgCache[title] = null; return null; }
+function wikiImg(title) {
+  return new Promise(resolve => {
+    if (!title) { resolve(null); return; }
+    if (imgCache[title] !== undefined) { resolve(imgCache[title]); return; }
+
+    const cb = '_wjp' + Date.now() + Math.random().toString(36).slice(2);
+    let done = false;
+
+    const finish = url => {
+      if (done) return;
+      done = true;
+      clearTimeout(timer);
+      delete window[cb];
+      if (el && el.parentNode) el.parentNode.removeChild(el);
+      imgCache[title] = url;
+      resolve(url);
+    };
+
+    const timer = setTimeout(() => finish(null), 8000);
+
+    window[cb] = data => {
+      const pages = data && data.query && data.query.pages;
+      const page  = pages ? Object.values(pages)[0] : null;
+      finish(page && page.thumbnail ? page.thumbnail.source : null);
+    };
+
+    const el = document.createElement('script');
+    el.onerror = () => finish(null);
+    el.src = 'https://en.wikipedia.org/w/api.php?action=query&titles=' + encodeURIComponent(title) + '&prop=pageimages&pithumbsize=600&format=json&callback=' + cb;
+    document.head.appendChild(el);
+  });
 }
 
 // ─────────────────────────────────────────────

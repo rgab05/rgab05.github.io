@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Felidae Quiz</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: system-ui, sans-serif; background: #f5f5f3; color: #1a1a18; min-height: 100vh; }
+
+/* ── Layout shells ── */
+.screen { display: none; max-width: 640px; margin: 0 auto; padding: 2rem 1.5rem; }
+.screen.active { display: block; }
+
+/* ── Setup screen ── */
+.setup-title { font-size: 26px; font-weight: 600; margin-bottom: 0.3rem; }
+.setup-sub   { font-size: 15px; color: #888; margin-bottom: 2.5rem; }
+.setup-label { font-size: 12px; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: #aaa; margin-bottom: 10px; }
+.diff-grid   { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; margin-bottom: 2rem; }
+.diff-btn    { border: 1.5px solid rgba(0,0,0,0.12); border-radius: 12px; padding: 1rem 0.5rem; cursor: pointer; background: #fff; text-align: center; transition: border-color .15s, background .15s; }
+.diff-btn:hover { border-color: rgba(0,0,0,0.3); }
+.diff-btn.selected { border-color: #185FA5; background: #EDF3FB; }
+.diff-btn .diff-icon { font-size: 26px; margin-bottom: 6px; }
+.diff-btn .diff-name { font-size: 14px; font-weight: 600; }
+.diff-btn .diff-desc { font-size: 11px; color: #999; margin-top: 3px; line-height: 1.4; }
+.q-count-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 2.5rem; }
+.qc-btn { border: 1.5px solid rgba(0,0,0,0.12); border-radius: 8px; padding: 7px 18px; cursor: pointer; background: #fff; font-size: 14px; transition: border-color .15s, background .15s; }
+.qc-btn:hover { border-color: rgba(0,0,0,0.3); }
+.qc-btn.selected { border-color: #185FA5; background: #EDF3FB; font-weight: 600; }
+.start-btn { width: 100%; padding: 0.9rem; background: #1a1a18; color: #fff; border: none; border-radius: 10px; font-size: 16px; font-weight: 500; cursor: pointer; transition: background .15s; }
+.start-btn:hover { background: #333; }
+.start-btn:disabled { background: #ccc; cursor: not-allowed; }
+
+/* ── Progress bar ── */
+.progress-wrap { margin-bottom: 1.5rem; }
+.progress-meta { display: flex; justify-content: space-between; font-size: 12px; color: #aaa; margin-bottom: 6px; }
+.progress-track { height: 4px; background: rgba(0,0,0,0.08); border-radius: 99px; overflow: hidden; }
+.progress-fill  { height: 100%; background: #185FA5; border-radius: 99px; transition: width 0.4s; }
+
+/* ── Question card ── */
+.q-header { font-size: 12px; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: #aaa; margin-bottom: 1rem; }
+.q-card { background: #fff; border: 0.5px solid rgba(0,0,0,0.1); border-radius: 16px; overflow: hidden; margin-bottom: 1.25rem; }
+.q-img-wrap { width: 100%; height: 260px; overflow: hidden; position: relative; display: flex; align-items: center; justify-content: center; background: #e8e8e6; }
+.q-img-wrap img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity .4s; }
+.q-img-wrap img.loaded { opacity: 1; }
+.q-img-placeholder { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; }
+.q-img-placeholder svg { opacity: 0.18; }
+.q-img-placeholder span { font-size: 12px; color: #bbb; }
+.q-body { padding: 1.25rem 1.25rem 1rem; }
+.q-prompt { font-size: 18px; font-weight: 600; margin-bottom: 1rem; line-height: 1.4; }
+.clue-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.clue { background: #f5f5f3; border-radius: 8px; padding: 8px 10px; }
+.clue .clue-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; color: #aaa; margin-bottom: 3px; }
+.clue .clue-val   { font-size: 13px; font-weight: 500; }
+.clue.full { grid-column: 1 / -1; }
+.fact-box { background: #f5f5f3; border-radius: 8px; padding: 10px 12px; margin-top: 10px; font-size: 13px; color: #555; line-height: 1.65; }
+
+/* ── Status badges ── */
+.badge { display: inline-block; font-size: 10px; padding: 2px 8px; border-radius: 99px; font-weight: 500; }
+.lc { background:#EAF3DE; color:#3B6D11; }
+.nt { background:#FFF3D6; color:#8A5E00; }
+.vu { background:#FEE9D5; color:#993C1D; }
+.en { background:#FAECE7; color:#A32020; }
+.cr { background:#FCEBEB; color:#A32D2D; }
+.domestic { background:#E8EAF6; color:#3949AB; }
+
+/* ── Answer options ── */
+.options { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.opt { border: 1.5px solid rgba(0,0,0,0.12); border-radius: 10px; padding: 0.8rem 1rem; cursor: pointer; background: #fff; font-size: 14px; font-weight: 500; text-align: left; transition: border-color .12s, background .12s; line-height: 1.4; }
+.opt:hover:not(:disabled) { border-color: rgba(0,0,0,0.3); background: #fafaf8; }
+.opt.correct  { border-color: #3B6D11 !important; background: #EAF3DE !important; color: #3B6D11; }
+.opt.wrong    { border-color: #A32D2D !important; background: #FCEBEB !important; color: #A32D2D; }
+.opt.dim      { opacity: 0.4; }
+.opt:disabled { cursor: default; }
+.opt .opt-sub { font-size: 11px; font-weight: 400; color: inherit; opacity: 0.7; display: block; margin-top: 2px; }
+
+/* ── Answer reveal ── */
+.reveal { margin-top: 1.25rem; padding: 1rem 1.25rem; border-radius: 12px; font-size: 14px; line-height: 1.6; }
+.reveal.correct-reveal { background: #EAF3DE; color: #3B6D11; }
+.reveal.wrong-reveal   { background: #FCEBEB; color: #A32D2D; }
+.reveal .reveal-head   { font-weight: 700; font-size: 15px; margin-bottom: 4px; display: flex; align-items: center; gap: 6px; }
+.reveal .reveal-fact   { margin-top: 8px; font-size: 13px; opacity: 0.85; line-height: 1.65; }
+
+.next-btn { margin-top: 1.25rem; width: 100%; padding: 0.85rem; background: #1a1a18; color: #fff; border: none; border-radius: 10px; font-size: 15px; font-weight: 500; cursor: pointer; transition: background .15s; }
+.next-btn:hover { background: #333; }
+
+/* ── Results screen ── */
+.results-hero { text-align: center; padding: 2rem 0 1.5rem; }
+.results-score { font-size: 64px; font-weight: 700; line-height: 1; }
+.results-label { font-size: 15px; color: #888; margin-top: 6px; }
+.results-grade { font-size: 28px; margin-top: 1rem; }
+.results-table { margin-top: 1.5rem; display: flex; flex-direction: column; gap: 8px; }
+.result-row { display: flex; align-items: flex-start; gap: 10px; background: #fff; border: 0.5px solid rgba(0,0,0,0.08); border-radius: 10px; padding: 10px 14px; font-size: 13px; }
+.result-row .rr-icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+.result-row .rr-q { flex: 1; color: #888; }
+.result-row .rr-a { font-weight: 500; }
+.result-row .rr-yours { font-size: 12px; color: #A32D2D; margin-top: 2px; }
+.result-row.rr-correct .rr-a { color: #3B6D11; }
+.play-again { margin-top: 1.5rem; width: 100%; padding: 0.85rem; background: #1a1a18; color: #fff; border: none; border-radius: 10px; font-size: 15px; font-weight: 500; cursor: pointer; }
+.play-again:hover { background: #333; }
+
+/* ── Dark mode ── */
+@media (prefers-color-scheme: dark) {
+  body { background: #1a1a18; color: #f0f0ee; }
+  .diff-btn, .qc-btn, .q-card, .opt, .result-row { background: #2c2c2a; border-color: rgba(255,255,255,0.1); }
+  .diff-btn.selected, .qc-btn.selected { background: #1a2d42; border-color: #4A8FD4; }
+  .opt.correct { background: #1a3020 !important; color: #7BC67A !important; border-color: #3B6D11 !important; }
+  .opt.wrong   { background: #3a1010 !important; color: #F08080 !important; border-color: #A32D2D !important; }
+  .opt:hover:not(:disabled) { background: #333 !important; }
+  .clue, .fact-box { background: #222220; }
+  .clue .clue-val, .q-prompt { color: #f0f0ee; }
+  .reveal.correct-reveal { background: #1a3020; color: #7BC67A; }
+  .reveal.wrong-reveal   { background: #3a1010; color: #F08080; }
+  .start-btn, .next-btn, .play-again { background: #e0e0de; color: #1a1a18; }
+  .start-btn:hover, .next-btn:hover, .play-again:hover { background: #fff; }
+  .q-img-wrap { background: #2c2c2a; }
+  .diff-btn .diff-name, .diff-btn .diff-desc { color: #f0f0ee; }
+  .diff-btn .diff-desc { color: #888; }
+  .setup-sub, .diff-desc { color: #888; }
+  .results-label, .result-row .rr-q { color: #888; }
+  .results-score { color: #f0f0ee; }
+  .progress-track { background: rgba(255,255,255,0.08); }
+}
+</style>
+</head>
+<body>
+
+<!-- ── SETUP SCREEN ── -->
+<div id="screen-setup" class="screen active">
+  <p class="setup-title">🐆 Felidae Quiz</p>
+  <p class="setup-sub">How well do you know the cat family?</p>
+
+  <p class="setup-label">Difficulty</p>
+  <div class="diff-grid">
+    <button class="diff-btn" data-diff="easy" onclick="selectDiff('easy')">
+      <div class="diff-icon">🖼️</div>
+      <div class="diff-name">Easy</div>
+      <div class="diff-desc">Photo shown · guess the species</div>
+    </button>
+    <button class="diff-btn" data-diff="medium" onclick="selectDiff('medium')">
+      <div class="diff-icon">📋</div>
+      <div class="diff-name">Medium</div>
+      <div class="diff-desc">Lots of clues · no photo</div>
+    </button>
+    <button class="diff-btn" data-diff="hard" onclick="selectDiff('hard')">
+      <div class="diff-icon">🔍</div>
+      <div class="diff-name">Hard</div>
+      <div class="diff-desc">Very limited info only</div>
+    </button>
+  </div>
+
+  <p class="setup-label">Number of questions</p>
+  <div class="q-count-row" id="qcount-row">
+    <button class="qc-btn" data-n="5"  onclick="selectN(5)">5</button>
+    <button class="qc-btn" data-n="10" onclick="selectN(10)">10</button>
+    <button class="qc-btn" data-n="15" onclick="selectN(15)">15</button>
+    <button class="qc-btn" data-n="20" onclick="selectN(20)">20</button>
+  </div>
+
+  <button class="start-btn" id="start-btn" onclick="startQuiz()" disabled>Choose difficulty & question count</button>
+</div>
+
+<!-- ── QUESTION SCREEN ── -->
+<div id="screen-question" class="screen">
+  <div class="progress-wrap">
+    <div class="progress-meta">
+      <span id="prog-label">Question 1 of 10</span>
+      <span id="score-label">Score: 0</span>
+    </div>
+    <div class="progress-track"><div class="progress-fill" id="prog-fill" style="width:0%"></div></div>
+  </div>
+
+  <p class="q-header" id="q-diff-label"></p>
+  <div class="q-card" id="q-card"></div>
+  <div class="options" id="q-options"></div>
+  <div id="q-reveal" style="display:none"></div>
+  <button class="next-btn" id="next-btn" style="display:none" onclick="nextQuestion()">Next question →</button>
+</div>
+
+<!-- ── RESULTS SCREEN ── -->
+<div id="screen-results" class="screen">
+  <div class="results-hero">
+    <div class="results-score" id="res-score"></div>
+    <div class="results-label" id="res-label"></div>
+    <div class="results-grade" id="res-grade"></div>
+  </div>
+  <div class="results-table" id="res-table"></div>
+  <button class="play-again" onclick="goSetup()">Play again</button>
+</div>
+
+<script>
+// ─────────────────────────────────────────────
+// DATA (same as family tree page)
+// ─────────────────────────────────────────────
+const GENERA = [
+  {
+    id:"panthera", name:"Panthera", common:"Roaring Cats",
+    species:[
+      { name:"Lion", latin:"Panthera leo", status:"vu", range:"Sub-Saharan Africa, India", wiki:"Lion",
+        subspecies:[
+          { name:"African Lion", latin:"P. l. leo", status:"vu", pop:"~20,000", range:"Sub-Saharan Africa", weight:"120–190 kg", wiki:"Lion", fact:"The only truly social wild cat, living in prides of up to 30 individuals. Males are the only cats with a mane — it signals age and health to rivals and potential mates." },
+          { name:"Asiatic Lion", latin:"P. l. persica", status:"en", pop:"~700", range:"Gir Forest, India", weight:"160–190 kg", wiki:"Asiatic_lion", fact:"Once roamed from Greece to Bangladesh. Today confined to a single forest in Gujarat. A second wild site is being established as a safeguard against catastrophic disease." }
+        ]
+      },
+      { name:"Tiger", latin:"Panthera tigris", status:"en", range:"South & SE Asia, Russia", wiki:"Tiger",
+        subspecies:[
+          { name:"Bengal Tiger", latin:"P. t. tigris", status:"en", pop:"~2,500", range:"India, Bangladesh, Nepal", weight:"140–300 kg", wiki:"Bengal_tiger", fact:"The most numerous tiger subspecies — roughly 70% of all wild tigers live in India. White tigers are a colour morph caused by a recessive gene, not a separate subspecies." },
+          { name:"Amur Tiger", latin:"P. t. altaica", status:"en", pop:"~500", range:"Russian Far East", weight:"180–310 kg", wiki:"Siberian_tiger", fact:"The largest wild cat on Earth. A thick layer of fat along the belly insulates against Siberian winters where temperatures plunge to −40 °C." },
+          { name:"Sumatran Tiger", latin:"P. t. sumatrae", status:"cr", pop:"~400", range:"Sumatra, Indonesia", weight:"75–140 kg", wiki:"Sumatran_tiger", fact:"The smallest living tiger subspecies, with notably close-set stripes — possibly an adaptation for camouflage in dense rainforest undergrowth." },
+          { name:"Malayan Tiger", latin:"P. t. jacksoni", status:"cr", pop:"~80–120", range:"Peninsular Malaysia", weight:"100–130 kg", wiki:"Malayan_tiger", fact:"Only formally recognised as a distinct subspecies in 2004. It is the national animal of Malaysia and appears on the country's coat of arms." }
+        ]
+      },
+      { name:"Leopard", latin:"Panthera pardus", status:"vu", range:"Africa, Central & South Asia", wiki:"Leopard",
+        subspecies:[
+          { name:"African Leopard", latin:"P. p. pardus", status:"vu", pop:"Unknown", range:"Sub-Saharan Africa", weight:"60–90 kg", wiki:"African_leopard", fact:"The most adaptable big cat. Regularly hauls prey twice its own weight up into trees to keep it safe from lions and hyenas." },
+          { name:"Amur Leopard", latin:"P. p. orientalis", status:"cr", pop:"~100", range:"Russian Far East, China", weight:"32–48 kg", wiki:"Amur_leopard", fact:"One of the rarest cats on Earth. Their spots are larger and more spaced out than other leopards — camouflage for snowy, open terrain." },
+          { name:"Arabian Leopard", latin:"P. p. nimr", status:"cr", pop:"<200", range:"Arabian Peninsula", weight:"20–30 kg", wiki:"Arabian_leopard", fact:"The smallest leopard subspecies, surviving in fragmented mountain pockets of the Hijaz and Dhofar ranges." }
+        ]
+      },
+      { name:"Jaguar", latin:"Panthera onca", status:"nt", range:"Central & South America", wiki:"Jaguar",
+        subspecies:[
+          { name:"Amazonian Jaguar", latin:"P. o. onca", status:"nt", pop:"Unknown", range:"Amazon Basin", weight:"56–96 kg", wiki:"Jaguar", fact:"Jaguars have the most powerful bite of any big cat relative to size — strong enough to pierce turtle shells and caiman skulls." },
+          { name:"Arizonian Jaguar", latin:"P. o. arizonensis", status:"en", pop:"<30 in US", range:"US Southwest & Mexico", weight:"45–70 kg", wiki:"Jaguar", fact:"Extirpated from the US by the mid-20th century. A small number of males have been camera-trapped crossing back from Mexico in recent years." }
+        ]
+      },
+      { name:"Snow Leopard", latin:"Panthera uncia", status:"vu", range:"Central Asian mountains", wiki:"Snow_leopard",
+        subspecies:[
+          { name:"Snow Leopard", latin:"P. uncia (monotypic)", status:"vu", pop:"2,500–6,000", range:"Himalayas, Hindu Kush, Altai", weight:"22–55 kg", wiki:"Snow_leopard", fact:"Their tail is nearly as long as their body — used for balance on rocky terrain and wrapped around themselves like a scarf while sleeping." }
+        ]
+      }
+    ]
+  },
+  {
+    id:"neofelis", name:"Neofelis", common:"Clouded Leopards",
+    species:[
+      { name:"Clouded Leopard", latin:"Neofelis nebulosa", status:"vu", range:"Himalayas to SE Asia", wiki:"Clouded_leopard",
+        subspecies:[
+          { name:"Indochinese Clouded Leopard", latin:"N. n. nebulosa", status:"vu", pop:"Unknown", range:"China, Indochina", weight:"11–20 kg", wiki:"Clouded_leopard", fact:"Has the longest canine teeth relative to skull size of any living cat. Can run headfirst down tree trunks and hang by its hind feet from branches." },
+          { name:"Formosan Clouded Leopard", latin:"N. n. brachyurus", status:"cr", pop:"Possibly 0", range:"Taiwan", weight:"~16 kg", wiki:"Formosan_clouded_leopard", fact:"Declared locally extinct in 2013 after 13 years of camera trapping found no individuals. Unverified sightings in 2019 remain unconfirmed." }
+        ]
+      },
+      { name:"Sunda Clouded Leopard", latin:"Neofelis diardi", status:"vu", range:"Borneo & Sumatra", wiki:"Sunda_clouded_leopard",
+        subspecies:[
+          { name:"Bornean Clouded Leopard", latin:"N. d. borneensis", status:"vu", pop:"Unknown", range:"Borneo", weight:"12–25 kg", wiki:"Sunda_clouded_leopard", fact:"Only recognised as a separate species from the mainland clouded leopard in 2006. Has darker fur and smaller cloud markings." },
+          { name:"Sumatran Clouded Leopard", latin:"N. d. diardi", status:"vu", pop:"Unknown", range:"Sumatra", weight:"12–22 kg", wiki:"Sunda_clouded_leopard", fact:"Threatened mainly by palm oil deforestation. Loss of forest connectivity is isolating populations across Sumatra." }
+        ]
+      }
+    ]
+  },
+  {
+    id:"acinonyx", name:"Acinonyx", common:"Cheetah",
+    species:[
+      { name:"Cheetah", latin:"Acinonyx jubatus", status:"vu", range:"Africa, Iran", wiki:"Cheetah",
+        subspecies:[
+          { name:"East African Cheetah", latin:"A. j. jubatus", status:"vu", pop:"~4,000", range:"Tanzania, Kenya, Uganda", weight:"35–65 kg", wiki:"Cheetah", fact:"Accelerates from 0 to 100 km/h in roughly 3 seconds. After a chase, must rest 15–30 minutes before eating or risk losing the kill to larger predators." },
+          { name:"Asiatic Cheetah", latin:"A. j. venaticus", status:"cr", pop:"<50", range:"Iran", weight:"34–54 kg", wiki:"Asiatic_cheetah", fact:"Critically endangered and surviving only in Iran. The word 'cheetah' derives from the Sanskrit for 'spotted one'." },
+          { name:"South African Cheetah", latin:"A. j. jubatus", status:"vu", pop:"~4,000", range:"Southern Africa", weight:"40–65 kg", wiki:"Cheetah", fact:"The rare 'king cheetah' colour morph — with merged blotchy spots and dorsal stripes — occurs in this population, caused by a single recessive gene." },
+          { name:"Northwest African Cheetah", latin:"A. j. hecki", status:"cr", pop:"<250", range:"Sahara & Sahel", weight:"28–47 kg", wiki:"Northwest_African_cheetah", fact:"Paler and smaller than other subspecies — desert adaptations. Unlike most cheetahs, largely nocturnal to avoid extreme heat." }
+        ]
+      }
+    ]
+  },
+  {
+    id:"otocolobus", name:"Otocolobus", common:"Pallas's Cat",
+    species:[
+      { name:"Pallas's Cat", latin:"Otocolobus manul", status:"lc", range:"Central Asian steppes & mountains", wiki:"Pallas%27s_cat",
+        subspecies:[
+          { name:"Mongolian Pallas's Cat", latin:"O. m. manul", status:"lc", pop:"Unknown", range:"Mongolia, Northern China", weight:"2.5–4.5 kg", wiki:"Pallas%27s_cat", fact:"Looks much larger than it is — the incredibly dense fur adds massive apparent bulk. Despite the grumpy face, it is actually about the size of a domestic cat." },
+          { name:"Southern Pallas's Cat", latin:"O. m. ferrugineus", status:"lc", pop:"Unknown", range:"Iran, Pakistan, Afghanistan", weight:"2.5–4 kg", wiki:"Pallas%27s_cat", fact:"The paler, more russet-toned southern form. Adapted to arid desert and rocky terrain from Iran through Pakistan." },
+          { name:"Tibetan Pallas's Cat", latin:"O. m. nigripecta", status:"lc", pop:"Unknown", range:"Tibet, Nepal, Himalayas", weight:"3–5 kg", wiki:"Pallas%27s_cat", fact:"Found on the Tibetan Plateau up to 5,000 m. Has round pupils — unlike the vertical slits of most cats — an adaptation for open daylight hunting terrain." }
+        ]
+      }
+    ]
+  },
+  {
+    id:"lynx", name:"Lynx", common:"Lynxes",
+    species:[
+      { name:"Eurasian Lynx", latin:"Lynx lynx", status:"lc", range:"Europe to Central Asia", wiki:"Eurasian_lynx",
+        subspecies:[
+          { name:"Boreal Lynx", latin:"L. l. lynx", status:"lc", pop:"~50,000", range:"Scandinavia, Russia", weight:"18–30 kg", wiki:"Eurasian_lynx", fact:"The largest lynx species — can take prey up to four times its own size, including reindeer. Successfully reintroduced to several European countries." },
+          { name:"Balkan Lynx", latin:"L. l. balcanicus", status:"cr", pop:"<50", range:"North Macedonia, Albania", weight:"18–25 kg", wiki:"Balkan_lynx", fact:"One of Europe's most endangered mammals. Genetically isolated from all other lynx populations for decades." }
+        ]
+      },
+      { name:"Canada Lynx", latin:"Lynx canadensis", status:"lc", range:"Canada, Northern USA", wiki:"Canada_lynx",
+        subspecies:[
+          { name:"Canada Lynx", latin:"L. c. canadensis", status:"lc", pop:"Unknown", range:"Canada, Alaska, US Rockies", weight:"8–14 kg", wiki:"Canada_lynx", fact:"Its population cycle almost perfectly mirrors that of the snowshoe hare. When hare numbers crash, lynx populations follow within 1–2 years." }
+        ]
+      },
+      { name:"Iberian Lynx", latin:"Lynx pardinus", status:"en", range:"Iberian Peninsula", wiki:"Iberian_lynx",
+        subspecies:[
+          { name:"Iberian Lynx", latin:"L. pardinus (monotypic)", status:"en", pop:"~1,100 (recovering)", range:"Spain, Portugal", weight:"7–15 kg", wiki:"Iberian_lynx", fact:"Only ~94 individuals remained in 2002. An intensive conservation programme has since brought numbers back from the brink in a remarkable success story." }
+        ]
+      },
+      { name:"Bobcat", latin:"Lynx rufus", status:"lc", range:"North America", wiki:"Bobcat",
+        subspecies:[
+          { name:"Desert Bobcat", latin:"L. r. baileyi", status:"lc", pop:"Unknown", range:"US Southwest, Mexico", weight:"4–9 kg", wiki:"Bobcat", fact:"Paler than northern bobcats — a desert camouflage adaptation. Despite their size, can take prey as large as young deer." },
+          { name:"Eastern Bobcat", latin:"L. r. rufus", status:"lc", pop:"Unknown", range:"Eastern USA", weight:"6–12 kg", wiki:"Bobcat", fact:"The most common wild cat in North America. Found in swamps, forests, deserts and suburban edges — yet rarely seen due to strictly nocturnal habits." }
+        ]
+      }
+    ]
+  },
+  {
+    id:"puma", name:"Puma", common:"Cougar & Jaguarundi",
+    species:[
+      { name:"Cougar", latin:"Puma concolor", status:"lc", range:"Americas — widest range of any wild cat", wiki:"Cougar",
+        subspecies:[
+          { name:"North American Cougar", latin:"P. c. couguar", status:"lc", pop:"Unknown", range:"Western USA, Canada", weight:"53–100 kg", wiki:"Cougar", fact:"Holds the Guinness record for most English names for an animal — puma, mountain lion, panther, catamount and more. Can leap 5.5 m vertically." },
+          { name:"Florida Panther", latin:"P. c. couguar", status:"cr", pop:"~200", range:"Southern Florida", weight:"45–72 kg", wiki:"Florida_panther", fact:"One of the most endangered mammals in the US. A 1995 genetic rescue — introducing eight Texas females — reversed severe inbreeding and saved the population." },
+          { name:"South American Cougar", latin:"P. c. concolor", status:"lc", pop:"Unknown", range:"South America", weight:"60–120 kg", wiki:"Cougar", fact:"The Andean population lives at elevations up to 5,800 m — the highest altitude of any wild cat on Earth." }
+        ]
+      },
+      { name:"Jaguarundi", latin:"Herpailurus yagouaroundi", status:"lc", range:"Mexico to South America", wiki:"Jaguarundi",
+        subspecies:[
+          { name:"Northern Jaguarundi", latin:"H. y. tolteca", status:"lc", pop:"Unknown", range:"Mexico, Central America", weight:"3–9 kg", wiki:"Jaguarundi", fact:"Looks more like an otter than a cat. Highly active during the day, unlike most cats. Communicates with 13 distinct vocalisations but does not roar or meow." }
+        ]
+      }
+    ]
+  },
+  {
+    id:"prionailurus", name:"Prionailurus", common:"Asian Small Cats",
+    species:[
+      { name:"Leopard Cat", latin:"Prionailurus bengalensis", status:"lc", range:"South & Southeast Asia", wiki:"Leopard_cat",
+        subspecies:[
+          { name:"Continental Leopard Cat", latin:"P. b. bengalensis", status:"lc", pop:"Unknown", range:"South & mainland SE Asia", weight:"3–7 kg", wiki:"Leopard_cat", fact:"The ancestor of the domestic Bengal cat breed. One of the most widespread small cats in Asia, highly adaptable to forest edges and farmland." },
+          { name:"Sundaland Leopard Cat", latin:"P. b. javanensis", status:"lc", pop:"Unknown", range:"Borneo, Java, Bali, Sumatra", weight:"2–4 kg", wiki:"Leopard_cat", fact:"The smallest leopard cat subspecies. Despite their size they are strong swimmers, often found along rivers and coasts on the Sunda islands." }
+        ]
+      },
+      { name:"Fishing Cat", latin:"Prionailurus viverrinus", status:"vu", range:"South & Southeast Asia", wiki:"Fishing_cat",
+        subspecies:[
+          { name:"Fishing Cat", latin:"P. v. viverrinus (monotypic)", status:"vu", pop:"Unknown", range:"India, Sri Lanka, SE Asia", weight:"5–16 kg", wiki:"Fishing_cat", fact:"One of the only cats that actively dives for fish. Partially webbed paws help in water, and it taps the surface to lure curious fish within reach." }
+        ]
+      },
+      { name:"Flat-headed Cat", latin:"Prionailurus planicephalus", status:"en", range:"Borneo, Sumatra, Thailand", wiki:"Flat-headed_cat",
+        subspecies:[
+          { name:"Flat-headed Cat", latin:"P. planicephalus (monotypic)", status:"en", pop:"<2,500 est.", range:"Borneo, Sumatra, Thailand", weight:"1.5–2.5 kg", wiki:"Flat-headed_cat", fact:"One of the least-studied wild cats. Its flat skull, forward-set eyes and webbed feet suggest a highly aquatic lifestyle. Backward-angled teeth grip slippery fish like hooks." }
+        ]
+      },
+      { name:"Rusty-spotted Cat", latin:"Prionailurus rubiginosus", status:"nt", range:"India & Sri Lanka", wiki:"Rusty-spotted_cat",
+        subspecies:[
+          { name:"Indian Rusty-spotted Cat", latin:"P. r. rubiginosus", status:"nt", pop:"Unknown", range:"India", weight:"0.9–1.6 kg", wiki:"Rusty-spotted_cat", fact:"One of the world's two smallest wild cats. Despite weighing under 1.6 kg it has been observed fearlessly attempting to stalk prey larger than itself." },
+          { name:"Sri Lankan Rusty-spotted Cat", latin:"P. r. phillipsi", status:"nt", pop:"Unknown", range:"Sri Lanka", weight:"0.9–1.5 kg", wiki:"Rusty-spotted_cat", fact:"Slightly smaller than the Indian subspecies. Almost exclusively nocturnal and rarely photographed, living in humid forests and dense scrub." }
+        ]
+      }
+    ]
+  },
+  {
+    id:"felis", name:"Felis", common:"Small Cats & Domestic Cat",
+    species:[
+      { name:"Wildcat", latin:"Felis silvestris", status:"lc", range:"Europe, Africa, Asia", wiki:"Wildcat",
+        subspecies:[
+          { name:"European Wildcat", latin:"F. s. silvestris", status:"lc", pop:"Unknown", range:"Europe", weight:"3–8 kg", wiki:"European_wildcat", fact:"Notoriously untameable — historical domestication attempts almost always failed. Hybridisation with domestic cats is now the biggest threat to genetically pure populations." },
+          { name:"African Wildcat", latin:"F. s. lybica", status:"lc", pop:"Unknown", range:"Africa, Middle East", weight:"2.7–6 kg", wiki:"African_wildcat", fact:"The direct ancestor of every domestic cat. Domestication occurred ~10,000 years ago in the Fertile Crescent, linked to the rise of grain storage." },
+          { name:"Domestic Cat", latin:"F. s. catus", status:"domestic", pop:"~600 million", range:"Worldwide", weight:"3.5–5 kg", wiki:"Cat", fact:"Technically a subspecies of wildcat. Despite thousands of years of domestication, domestic cats remain genetically near-identical to African wildcats and retain essentially all hunting instincts." }
+        ]
+      },
+      { name:"Sand Cat", latin:"Felis margarita", status:"lc", range:"Sahara, Middle East, Central Asia", wiki:"Sand_cat",
+        subspecies:[
+          { name:"Saharan Sand Cat", latin:"F. m. margarita", status:"lc", pop:"Unknown", range:"Sahara Desert", weight:"1.5–3.5 kg", wiki:"Sand_cat", fact:"Survives temperatures from −5 °C to 52 °C. Dense fur on its paw pads protects against scorching sand. Can go weeks without drinking, getting all moisture from prey." }
+        ]
+      }
+    ]
+  },
+  {
+    id:"leopardus", name:"Leopardus", common:"South American Spotted Cats",
+    species:[
+      { name:"Ocelot", latin:"Leopardus pardalis", status:"lc", range:"Southern USA to South America", wiki:"Ocelot",
+        subspecies:[
+          { name:"Northern Ocelot", latin:"L. p. albescens", status:"lc", pop:"<50 in US", range:"Texas, Mexico", weight:"6–15 kg", wiki:"Ocelot", fact:"Once hunted nearly to extinction for fur. A highway in southern Texas now divides a US population too small to be genetically viable without wildlife crossings." },
+          { name:"South American Ocelot", latin:"L. p. pardalis", status:"lc", pop:"Unknown", range:"South America", weight:"8–18 kg", wiki:"Ocelot", fact:"A skilled swimmer and climber. Strictly nocturnal, with eyes that reflect up to 6× more light than human eyes." }
+        ]
+      },
+      { name:"Margay", latin:"Leopardus wiedii", status:"nt", range:"Mexico to Argentina", wiki:"Margay",
+        subspecies:[
+          { name:"Margay", latin:"L. w. wiedii (monotypic)", status:"nt", pop:"Unknown", range:"Central & South America", weight:"2.6–4 kg", wiki:"Margay", fact:"One of only two cat species whose ankle joints rotate 180°, allowing headfirst descent of trees. Documented mimicking tamarin distress calls to lure adult monkeys." }
+        ]
+      }
+    ]
+  },
+  {
+    id:"caracal", name:"Caracal", common:"Caracal & Serval",
+    species:[
+      { name:"Caracal", latin:"Caracal caracal", status:"lc", range:"Africa, Middle East, Central Asia", wiki:"Caracal",
+        subspecies:[
+          { name:"African Caracal", latin:"C. c. caracal", status:"lc", pop:"Unknown", range:"Sub-Saharan Africa", weight:"8–19 kg", wiki:"Caracal", fact:"Can leap over 3 m vertically to snatch birds in mid-air. Historically trained as a hunting companion in India and Persia. 'Caracal' means 'black ear' in Turkish." },
+          { name:"Turkestan Caracal", latin:"C. c. michaelis", status:"lc", pop:"Unknown", range:"Central Asia", weight:"11–20 kg", wiki:"Caracal", fact:"The northernmost and largest caracal population. Persecuted as a livestock predator and threatened by habitat loss across Central Asian steppes." }
+        ]
+      },
+      { name:"Serval", latin:"Leptailurus serval", status:"lc", range:"Sub-Saharan Africa", wiki:"Serval",
+        subspecies:[
+          { name:"Common Serval", latin:"L. s. serval", status:"lc", pop:"Unknown", range:"Sub-Saharan Africa", weight:"9–18 kg", wiki:"Serval", fact:"Has the largest ears relative to head size of any cat. Can locate prey under snow or in tall grass by sound alone. Successful in ~50% of hunts — the highest rate of any wild cat." }
+        ]
+      }
+    ]
+  },
+  {
+    id:"pardofelis", name:"Pardofelis", common:"Marbled Cat",
+    species:[
+      { name:"Marbled Cat", latin:"Pardofelis marmorata", status:"nt", range:"E. Himalayas to SE Asia", wiki:"Marbled_cat",
+        subspecies:[
+          { name:"Western Marbled Cat", latin:"P. m. marmorata", status:"nt", pop:"Unknown", range:"Himalayas, Indochina, Sumatra", weight:"2–5 kg", wiki:"Marbled_cat", fact:"One of the least-studied wild cats. The tail is proportionally the longest of any small cat — nearly body-length — used for balance in the forest canopy." },
+          { name:"Bornean Marbled Cat", latin:"P. m. longicauda", status:"nt", pop:"Unknown", range:"Borneo", weight:"2–4 kg", wiki:"Marbled_cat", fact:"Slightly darker than the western subspecies with a proportionally longer tail. Almost entirely arboreal, hunting birds, lizards and small mammals in Borneo's canopy." }
+        ]
+      }
+    ]
+  }
+];
+
+// ─────────────────────────────────────────────
+// FLATTEN POOLS
+// ─────────────────────────────────────────────
+const SPECIES_POOL = []; // for Easy
+const SUB_POOL = [];     // for Medium & Hard
+
+GENERA.forEach(g => {
+  g.species.forEach(s => {
+    SPECIES_POOL.push({ ...s, genusName: g.name, genusCommon: g.common });
+    s.subspecies.forEach(sub => {
+      SUB_POOL.push({ ...sub, speciesName: s.name, speciesLatin: s.latin, genusName: g.name, genusCommon: g.common });
+    });
+  });
+});
+
+// ─────────────────────────────────────────────
+// WIKIPEDIA IMAGE CACHE
+// ─────────────────────────────────────────────
+const imgCache = {};
+async function wikiImg(title) {
+  if (!title) return null;
+  if (imgCache[title] !== undefined) return imgCache[title];
+  try {
+    const r = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(title)}`);
+    const j = await r.json();
+    const url = j.thumbnail?.source?.replace(/\/\d+px-/, "/600px-") ?? null;
+    imgCache[title] = url; return url;
+  } catch { imgCache[title] = null; return null; }
+}
+
+// ─────────────────────────────────────────────
+// QUIZ STATE
+// ─────────────────────────────────────────────
+let difficulty = null, totalQ = null;
+let questions = [], qIdx = 0, score = 0, answered = false;
+let history = []; // {question, correct, chosen}
+
+// ─────────────────────────────────────────────
+// SETUP
+// ─────────────────────────────────────────────
+function selectDiff(d) {
+  difficulty = d;
+  document.querySelectorAll('.diff-btn').forEach(b => b.classList.toggle('selected', b.dataset.diff === d));
+  updateStartBtn();
+}
+function selectN(n) {
+  totalQ = n;
+  document.querySelectorAll('.qc-btn').forEach(b => b.classList.toggle('selected', +b.dataset.n === n));
+  updateStartBtn();
+}
+function updateStartBtn() {
+  const btn = document.getElementById('start-btn');
+  if (difficulty && totalQ) { btn.disabled = false; btn.textContent = `Start quiz →`; }
+}
+
+// ─────────────────────────────────────────────
+// BUILD QUESTIONS
+// ─────────────────────────────────────────────
+function shuffle(arr) { return [...arr].sort(() => Math.random() - 0.5); }
+function pickRandom(arr, n) { return shuffle(arr).slice(0, n); }
+
+function buildQuestions() {
+  const pool = difficulty === 'easy' ? SPECIES_POOL : SUB_POOL;
+  const count = Math.min(totalQ, pool.length);
+  const selected = pickRandom(pool, count);
+  return selected.map(item => {
+    const wrong = shuffle(pool.filter(x => x.name !== item.name)).slice(0, 3);
+    const options = shuffle([item, ...wrong]);
+    return { item, options };
+  });
+}
+
+// ─────────────────────────────────────────────
+// START QUIZ
+// ─────────────────────────────────────────────
+function startQuiz() {
+  questions = buildQuestions();
+  qIdx = 0; score = 0; history = [];
+  show('screen-question');
+  renderQuestion();
+}
+
+// ─────────────────────────────────────────────
+// RENDER QUESTION
+// ─────────────────────────────────────────────
+function renderQuestion() {
+  answered = false;
+  const { item, options } = questions[qIdx];
+  const total = questions.length;
+
+  document.getElementById('prog-label').textContent = `Question ${qIdx + 1} of ${total}`;
+  document.getElementById('score-label').textContent = `Score: ${score}`;
+  document.getElementById('prog-fill').style.width = `${(qIdx / total) * 100}%`;
+  document.getElementById('q-diff-label').textContent =
+    difficulty === 'easy' ? '🖼️ Easy — which cat is this?' :
+    difficulty === 'medium' ? '📋 Medium — identify this subspecies' :
+    '🔍 Hard — identify this cat from limited clues';
+  document.getElementById('q-reveal').style.display = 'none';
+  document.getElementById('next-btn').style.display = 'none';
+
+  // Build card
+  const card = document.getElementById('q-card');
+  card.innerHTML = '';
+
+  if (difficulty === 'easy') {
+    // Photo + minimal prompt
+    const imgWrap = document.createElement('div');
+    imgWrap.className = 'q-img-wrap';
+
+    // Placeholder sits in absolute centre, behind the img
+    const placeholder = document.createElement('div');
+    placeholder.className = 'q-img-placeholder';
+    placeholder.style.cssText = 'position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;z-index:0;';
+    placeholder.innerHTML = `<svg width="60" height="60" viewBox="0 0 100 90" xmlns="http://www.w3.org/2000/svg"><polygon points="28,34 16,6 38,26" fill="#aaa"/><polygon points="72,34 84,6 62,26" fill="#aaa"/><circle cx="50" cy="42" r="22" fill="#aaa"/><ellipse cx="48" cy="72" rx="26" ry="16" fill="#aaa"/></svg><span style="font-size:12px;color:#bbb">Loading image…</span>`;
+    imgWrap.appendChild(placeholder);
+
+    // img on top; set onload BEFORE src to avoid cache race condition
+    const img = document.createElement('img');
+    img.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity .45s;z-index:1;';
+    img.onload  = () => { img.style.opacity = '1'; placeholder.style.display = 'none'; };
+    img.onerror = () => { placeholder.querySelector('span').textContent = 'No image available'; };
+    imgWrap.appendChild(img);
+    card.appendChild(imgWrap);
+
+    if (item.wiki) {
+      wikiImg(item.wiki).then(url => {
+        if (url) { img.src = url; }
+        else { placeholder.querySelector('span').textContent = 'No image available'; }
+      });
+    }
+
+    const body = document.createElement('div');
+    body.className = 'q-body';
+    body.innerHTML = `<p class="q-prompt">Which species is this?</p>`;
+    card.appendChild(body);
+
+  } else if (difficulty === 'medium') {
+    // Lots of clues, no photo
+    const body = document.createElement('div');
+    body.className = 'q-body';
+    const statusCls = item.status === 'domestic' ? 'domestic' : item.status;
+    const statusLabels = { lc:"Least concern", nt:"Near threatened", vu:"Vulnerable", en:"Endangered", cr:"Critically endangered", domestic:"Domesticated" };
+    body.innerHTML = `
+      <p class="q-prompt" style="margin-bottom:14px">Which subspecies is this?</p>
+      <div class="clue-grid">
+        <div class="clue"><div class="clue-label">Genus</div><div class="clue-val">${item.genusName} (${item.genusCommon})</div></div>
+        <div class="clue"><div class="clue-label">Conservation status</div><div class="clue-val"><span class="badge ${statusCls}">${statusLabels[item.status] || item.status}</span></div></div>
+        <div class="clue"><div class="clue-label">Range</div><div class="clue-val">${item.range}</div></div>
+        <div class="clue"><div class="clue-label">Weight</div><div class="clue-val">${item.weight}</div></div>
+        <div class="clue"><div class="clue-label">Population</div><div class="clue-val">${item.pop}</div></div>
+        <div class="clue"><div class="clue-label">Parent species</div><div class="clue-val">${item.speciesName}</div></div>
+        <div class="clue full"><div class="clue-label">Key fact</div><div class="clue-val" style="font-weight:400;line-height:1.5">${item.fact}</div></div>
+      </div>`;
+    card.appendChild(body);
+
+  } else {
+    // Hard — very limited clues only
+    const body = document.createElement('div');
+    body.className = 'q-body';
+    // Pick 2 hard clues: weight + first sentence of fact (stripped of name)
+    const firstSentence = item.fact.split('.')[0] + '.';
+    const vagueFact = firstSentence
+      .replace(new RegExp(item.name.split(' ').pop(), 'gi'), '___')
+      .replace(new RegExp(item.speciesName?.split(' ').pop() || '', 'gi'), '___');
+    body.innerHTML = `
+      <p class="q-prompt" style="margin-bottom:14px">Identify this cat from limited clues</p>
+      <div class="clue-grid">
+        <div class="clue"><div class="clue-label">Weight</div><div class="clue-val">${item.weight}</div></div>
+        <div class="clue"><div class="clue-label">Genus</div><div class="clue-val">${item.genusName}</div></div>
+        <div class="clue full"><div class="clue-label">One clue</div><div class="clue-val" style="font-weight:400;line-height:1.5">${vagueFact}</div></div>
+      </div>`;
+    card.appendChild(body);
+  }
+
+  // Build options
+  const optWrap = document.getElementById('q-options');
+  optWrap.innerHTML = '';
+  options.forEach(opt => {
+    const btn = document.createElement('button');
+    btn.className = 'opt';
+    btn.innerHTML = `${opt.name}<span class="opt-sub">${opt.latin}</span>`;
+    btn.onclick = () => selectAnswer(opt.name, item.name, btn, options);
+    optWrap.appendChild(btn);
+  });
+}
+
+// ─────────────────────────────────────────────
+// ANSWER HANDLING
+// ─────────────────────────────────────────────
+function selectAnswer(chosen, correct, btn, options) {
+  if (answered) return;
+  answered = true;
+  const isCorrect = chosen === correct;
+  if (isCorrect) score++;
+  document.getElementById('score-label').textContent = `Score: ${score}`;
+
+  // Style all options
+  document.querySelectorAll('.opt').forEach(b => {
+    const bname = b.textContent.trim().split('\n')[0].trim();
+    b.disabled = true;
+    if (bname === correct) b.classList.add('correct');
+    else if (bname === chosen && !isCorrect) b.classList.add('wrong');
+    else b.classList.add('dim');
+  });
+
+  // Reveal
+  const { item } = questions[qIdx];
+  const revealDiv = document.getElementById('q-reveal');
+  revealDiv.style.display = 'block';
+  revealDiv.className = `reveal ${isCorrect ? 'correct-reveal' : 'wrong-reveal'}`;
+  revealDiv.innerHTML = isCorrect
+    ? `<div class="reveal-head">✓ Correct!</div><div class="reveal-fact">${item.fact}</div>`
+    : `<div class="reveal-head">✗ The answer was <strong>${correct}</strong></div><div class="reveal-fact">${item.fact}</div>`;
+
+  history.push({ question: item.name, correct: item.name, chosen, isCorrect });
+
+  // Next button
+  const nxt = document.getElementById('next-btn');
+  nxt.style.display = 'block';
+  nxt.textContent = qIdx + 1 < questions.length ? 'Next question →' : 'See results →';
+}
+
+// ─────────────────────────────────────────────
+// NAVIGATION
+// ─────────────────────────────────────────────
+function nextQuestion() {
+  qIdx++;
+  if (qIdx < questions.length) renderQuestion();
+  else showResults();
+}
+
+// ─────────────────────────────────────────────
+// RESULTS
+// ─────────────────────────────────────────────
+function showResults() {
+  show('screen-results');
+  const pct = score / questions.length;
+  document.getElementById('res-score').textContent = `${score}/${questions.length}`;
+  document.getElementById('res-label').textContent =
+    `${Math.round(pct * 100)}% correct · ${difficulty.charAt(0).toUpperCase() + difficulty.slice(1)} difficulty`;
+  const grade =
+    pct === 1    ? '🏆 Perfect score!' :
+    pct >= 0.8   ? '🌟 Excellent!' :
+    pct >= 0.6   ? '👍 Good effort!' :
+    pct >= 0.4   ? '📚 Keep learning!' :
+                   '🐾 Back to the family tree!';
+  document.getElementById('res-grade').textContent = grade;
+
+  const table = document.getElementById('res-table');
+  table.innerHTML = '';
+  history.forEach(h => {
+    const row = document.createElement('div');
+    row.className = `result-row ${h.isCorrect ? 'rr-correct' : ''}`;
+    row.innerHTML = `
+      <span class="rr-icon">${h.isCorrect ? '✓' : '✗'}</span>
+      <div>
+        <div class="rr-a">${h.correct}</div>
+        ${!h.isCorrect ? `<div class="rr-yours">You answered: ${h.chosen}</div>` : ''}
+      </div>`;
+    table.appendChild(row);
+  });
+  document.getElementById('prog-fill').style.width = '100%';
+}
+
+// ─────────────────────────────────────────────
+// HELPERS
+// ─────────────────────────────────────────────
+function show(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+function goSetup() {
+  difficulty = null; totalQ = null;
+  document.querySelectorAll('.diff-btn').forEach(b => b.classList.remove('selected'));
+  document.querySelectorAll('.qc-btn').forEach(b => b.classList.remove('selected'));
+  const btn = document.getElementById('start-btn');
+  btn.disabled = true; btn.textContent = 'Choose difficulty & question count';
+  show('screen-setup');
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Global Primary Energy Model 2000–2050</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:        #ffffff;
+    --bg-2:      #f4f3ef;
+    --bg-3:      #eeece7;
+    --text-1:    #111827;
+    --text-2:    #6b7280;
+    --text-3:    #9ca3af;
+    --border:    rgba(0,0,0,0.10);
+    --border-md: rgba(0,0,0,0.18);
+    --radius-md: 8px;
+    --radius-lg: 12px;
+    --grid-c:    rgba(0,0,0,0.06);
+    --tick-c:    #999;
+    --tt-bg:     #ffffff;
+    --tt-title:  #111827;
+    --tt-body:   #4b5563;
+    --tt-border: #e5e7eb;
+    --dan:       #A32D2D;
+    --suc:       #0F6E56;
+    --neu:       #111827;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg:        #161b26;
+      --bg-2:      #1e2535;
+      --bg-3:      #252d40;
+      --text-1:    #e2e8f0;
+      --text-2:    #9aa5b4;
+      --text-3:    #5a6a80;
+      --border:    rgba(255,255,255,0.09);
+      --border-md: rgba(255,255,255,0.16);
+      --grid-c:    rgba(255,255,255,0.06);
+      --tick-c:    #7a8aa0;
+      --tt-bg:     #1a2130;
+      --tt-title:  #e2e8f0;
+      --tt-body:   #9aa5b4;
+      --tt-border: #2a3550;
+      --dan:       #F7C1C1;
+      --suc:       #9FE1CB;
+      --neu:       #e2e8f0;
+    }
+  }
+
+  body {
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    background: var(--bg);
+    color: var(--text-1);
+    min-height: 100vh;
+    padding: 28px 20px;
+  }
+
+  .page {
+    max-width: 1000px;
+    margin: 0 auto;
+  }
+
+  header {
+    margin-bottom: 22px;
+    border-bottom: 0.5px solid var(--border);
+    padding-bottom: 16px;
+  }
+
+  header h1 {
+    font-size: 22px;
+    font-weight: 500;
+    line-height: 1.3;
+    color: var(--text-1);
+  }
+
+  header p {
+    font-size: 14px;
+    color: var(--text-2);
+    margin-top: 4px;
+    line-height: 1.6;
+    max-width: 720px;
+  }
+
+  .layout {
+    display: grid;
+    grid-template-columns: 200px 1fr;
+    gap: 20px;
+  }
+
+  /* ── Sidebar ────────────────────────────────── */
+  .sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .section-label {
+    font-size: 10px;
+    color: var(--text-3);
+    text-transform: uppercase;
+    letter-spacing: .07em;
+    margin-bottom: 12px;
+  }
+
+  .param {
+    margin-bottom: 18px;
+  }
+
+  .param-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 6px;
+  }
+
+  .param-header span:first-child {
+    font-size: 13px;
+    color: var(--text-2);
+  }
+
+  .param-header span:last-child {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-1);
+  }
+
+  input[type=range] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 4px;
+    background: var(--bg-3);
+    border-radius: 2px;
+    outline: none;
+    cursor: pointer;
+  }
+
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--text-1);
+    cursor: pointer;
+    border: 2px solid var(--bg);
+    box-shadow: 0 0 0 1px var(--border-md);
+  }
+
+  input[type=range]::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--text-1);
+    cursor: pointer;
+    border: 2px solid var(--bg);
+    box-shadow: 0 0 0 1px var(--border-md);
+  }
+
+  .range-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 10px;
+    color: var(--text-3);
+    margin-top: 3px;
+  }
+
+  .divider {
+    border: none;
+    border-top: 0.5px solid var(--border);
+    margin: 14px 0;
+  }
+
+  .legend {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--text-2);
+  }
+
+  .legend-swatch {
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+    flex-shrink: 0;
+  }
+
+  .source-note {
+    margin-top: 14px;
+    font-size: 10px;
+    color: var(--text-3);
+    line-height: 1.55;
+  }
+
+  /* ── Main panel ─────────────────────────────── */
+  .main { display: flex; flex-direction: column; gap: 12px; }
+
+  .region-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .region-tab {
+    font-family: inherit;
+    font-size: 12px;
+    line-height: 1;
+    padding: 7px 12px;
+    border-radius: 999px;
+    border: 1px solid var(--border-md);
+    background: transparent;
+    color: var(--text-2);
+    cursor: pointer;
+    transition: background .15s ease, color .15s ease, border-color .15s ease;
+  }
+
+  .region-tab:hover { border-color: var(--text-2); color: var(--text-1); }
+
+  .region-tab.active {
+    background: var(--text-1);
+    color: var(--bg);
+    border-color: var(--text-1);
+  }
+
+  .metrics {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .metric {
+    background: var(--bg-2);
+    border-radius: var(--radius-md);
+    padding: 11px 13px;
+  }
+
+  .metric-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    color: var(--text-3);
+    margin-bottom: 4px;
+  }
+
+  .metric-value {
+    font-size: 19px;
+    font-weight: 500;
+    line-height: 1.2;
+    color: var(--text-1);
+  }
+
+  .metric-sub {
+    font-size: 11px;
+    color: var(--text-3);
+    margin-top: 3px;
+  }
+
+  .chart-wrap {
+    position: relative;
+    width: 100%;
+    height: 360px;
+  }
+
+  /* ── Methodology ────────────────────────────── */
+  .methodology {
+    border-top: 0.5px solid var(--border);
+    padding-top: 14px;
+    margin-top: 2px;
+  }
+
+  .methodology summary {
+    font-size: 12px;
+    color: var(--text-2);
+    cursor: pointer;
+    user-select: none;
+    list-style: none;
+  }
+
+  .methodology summary::-webkit-details-marker { display: none; }
+
+  .methodology summary::before {
+    content: '+';
+    display: inline-block;
+    width: 14px;
+    color: var(--text-3);
+  }
+
+  .methodology[open] summary::before { content: '–'; }
+
+  .methodology summary:hover { color: var(--text-1); }
+
+  .methodology-body {
+    font-size: 12px;
+    color: var(--text-2);
+    line-height: 1.7;
+    margin-top: 12px;
+    max-width: 680px;
+    padding-left: 14px;
+  }
+
+  .methodology-body p { margin-bottom: 10px; }
+  .methodology-body p:last-child { margin-bottom: 0; }
+  .methodology-body b { color: var(--text-1); font-weight: 500; }
+
+  /* ── Responsive ─────────────────────────────── */
+  @media (max-width: 640px) {
+    .layout { grid-template-columns: 1fr; }
+    .sidebar { display: grid; grid-template-columns: 1fr 1fr; gap: 0 16px; }
+    .section-label, .divider, .source-note { grid-column: 1/-1; }
+    .legend { grid-column: 1/-1; flex-direction: row; flex-wrap: wrap; }
+    .metrics { grid-template-columns: repeat(2, 1fr); }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header>
+    <h1>Global primary energy demand, 2000–2050</h1>
+    <p>Adjust GDP growth, population, and renewable ambition to explore how the global energy mix could evolve — then switch regions to see how the same assumptions play out differently in the US, China, the EU, India, and the rest of the world. Historical: IEA / Energy Institute Statistical Review, extended with bioenergy. Projection: a Kaya-identity-derived model with region-specific trends.</p>
+  </header>
+
+  <div class="layout">
+
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <p class="section-label">Parameters</p>
+
+      <div class="param">
+        <div class="param-header">
+          <span>GDP growth</span>
+          <span id="v-gdp">2.5% / yr</span>
+        </div>
+        <input type="range" id="s-gdp" min="0.5" max="5.0" step="0.1" value="2.5">
+        <div class="range-labels"><span>0.5%</span><span>5.0%</span></div>
+      </div>
+
+      <div class="param">
+        <div class="param-header">
+          <span>Population growth</span>
+          <span id="v-pop">0.7% / yr</span>
+        </div>
+        <input type="range" id="s-pop" min="0.0" max="1.5" step="0.1" value="0.7">
+        <div class="range-labels"><span>0.0%</span><span>1.5%</span></div>
+      </div>
+
+      <div class="param">
+        <div class="param-header">
+          <span>Renewable ambition</span>
+          <span id="v-ren">Moderate</span>
+        </div>
+        <input type="range" id="s-ren" min="0" max="100" step="5" value="40">
+        <div class="range-labels"><span>BAU</span><span>Net zero</span></div>
+      </div>
+
+      <hr class="divider">
+      <p class="section-label">Energy mix</p>
+
+      <div class="legend" id="legend"></div>
+
+      <p class="source-note" id="source-note"></p>
+    </aside>
+
+    <!-- Main panel -->
+    <div class="main">
+      <div class="region-tabs" id="region-tabs"></div>
+
+      <div class="metrics">
+        <div class="metric">
+          <div class="metric-label">2050 demand</div>
+          <div class="metric-value" id="m1">—</div>
+          <div class="metric-sub" id="m1sub">exajoules</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">vs 2023</div>
+          <div class="metric-value" id="m2">—</div>
+          <div class="metric-sub" id="m2sub">—</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">Clean energy 2050</div>
+          <div class="metric-value" id="m3">—</div>
+          <div class="metric-sub">wind, solar, hydro, nuclear</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">CO₂ trend</div>
+          <div class="metric-value" id="m4">—</div>
+          <div class="metric-sub">vs 2023 emissions</div>
+        </div>
+      </div>
+
+      <div class="chart-wrap">
+        <canvas id="echart" role="img"
+          aria-label="Stacked area chart of primary energy demand by source, 2000 to 2050">
+          Stacked area chart of primary energy demand 2000–2050 by source: coal, oil, natural gas, nuclear, hydro, bioenergy, wind, and solar.
+        </canvas>
+      </div>
+
+      <details class="methodology">
+        <summary>How this model works</summary>
+        <div class="methodology-body">
+          <p><b>Total demand</b> follows a simplified Kaya identity: energy = a GDP effect (elasticity 0.55 — demand grows slower than GDP as economies become less energy-intensive), a population effect (elasticity 0.25), and an autonomous efficiency effect (–1.5%/yr, faster under higher renewable ambition). The three sliders control this global total and how fast its mix shifts toward wind, solar, hydro, nuclear and bioenergy; fossil fuels absorb whatever demand is left.</p>
+          <p><b>Regions</b> are built by splitting each source's global total across five blocs (US, China, EU, India, rest-of-world) using shares calibrated to known 2000–2023 patterns — e.g. China's rising share of coal and solar, the EU's early wind lead giving way to China, India's still-small but fast-growing base — extrapolated forward with a saturating trend so no bloc's share runs away to an extreme. India and the rest-of-world are also given a modest extra demand-growth allowance, reflecting continued industrialization even under an aggressive global efficiency scenario. <b>The regional split is an illustrative estimate</b> built for this tool, not an official country-by-country dataset — treat it as directionally reasonable rather than precise.</p>
+          <p><b>A note on totals:</b> the ~680 EJ figure shown for 2023 is higher than the ~620 EJ headline you may see quoted from the Energy Institute's Statistical Review, because this model adds a bioenergy category (modern biofuels/biopower plus traditional biomass burned for cooking and heat) that the EI/BP-style accounting excludes. Coal, oil, gas, nuclear, hydro, wind and solar match the EI convention (input-equivalent method for non-fossil electricity).</p>
+        </div>
+      </details>
+    </div>
+  </div>
+</div>
+
+<script>
+/* =========================================================================
+   DATA
+   ========================================================================= */
+
+const SRCS = [
+  { k: 'coal',    nm: 'Coal',         lc: '#888780', dc: '#C0BEB5' },
+  { k: 'oil',     nm: 'Oil',          lc: '#B5541C', dc: '#E8944A' },
+  { k: 'gas',     nm: 'Natural gas',  lc: '#185FA5', dc: '#85B7EB' },
+  { k: 'nuclear', nm: 'Nuclear',      lc: '#534AB7', dc: '#AFA9EC' },
+  { k: 'hydro',   nm: 'Hydro',        lc: '#0F6E56', dc: '#5DCAA5' },
+  { k: 'bio',     nm: 'Bioenergy',    lc: '#8A7B4A', dc: '#C9BC8A' },
+  { k: 'wind',    nm: 'Wind',         lc: '#3B6D11', dc: '#97C459' },
+  { k: 'solar',   nm: 'Solar',        lc: '#C99A00', dc: '#F2D250' },
+];
+const SRC_KEYS = SRCS.map(s => s.k);
+
+const REGIONS = [
+  { k: 'global', nm: 'Global' },
+  { k: 'us',     nm: 'United States' },
+  { k: 'china',  nm: 'China' },
+  { k: 'eu',     nm: 'European Union' },
+  { k: 'india',  nm: 'India' },
+  { k: 'row',    nm: 'Rest of world' },
+];
+
+// Global historical primary energy, EJ, 5-year steps.
+// Coal/oil/gas/nuclear/hydro/wind+solar calibrated to the Energy Institute
+// Statistical Review 2024 (input-equivalent method); solar split out of the
+// combined "wind & solar" figure using IEA/Ember generation shares; bioenergy
+// added as a new category on an IEA World Energy Balances-style basis (see
+// "How this model works" below for why totals differ from EI's headline number).
+const HIST_GLOBAL = {
+  2000: { coal: 92,  oil: 148, gas: 88,  nuclear: 27, hydro: 26, bio: 46, wind: 4.9, solar: 0.1 },
+  2005: { coal: 120, oil: 160, gas: 100, nuclear: 28, hydro: 28, bio: 48, wind: 6.7, solar: 0.3 },
+  2010: { coal: 152, oil: 173, gas: 116, nuclear: 27, hydro: 31, bio: 50, wind: 12,  solar: 1   },
+  2015: { coal: 163, oil: 183, gas: 127, nuclear: 28, hydro: 36, bio: 53, wind: 19,  solar: 3   },
+  2020: { coal: 152, oil: 171, gas: 139, nuclear: 29, hydro: 39, bio: 55, wind: 30,  solar: 8   },
+  2023: { coal: 164, oil: 190, gas: 145, nuclear: 30, hydro: 41, bio: 58, wind: 30,  solar: 22  },
+};
+
+// Regional share of each source's global total, anchored at 2000 and 2023
+// (sums to 1 across regions for every source). Calibrated so 2023 regional
+// totals land close to published figures: US ~94 EJ, China ~171 EJ,
+// India ~39 EJ (Energy Institute Statistical Review 2024), EU and
+// rest-of-world as residuals.
+const REGION_SHARE_PARAMS = {
+  coal:    { us:{s2000:.22,s2023:.050}, china:{s2000:.30,s2023:.565}, eu:{s2000:.12,s2023:.040}, india:{s2000:.07,s2023:.125}, row:{s2000:.29,s2023:.220} },
+  oil:     { us:{s2000:.26,s2023:.180}, china:{s2000:.06,s2023:.160}, eu:{s2000:.20,s2023:.120}, india:{s2000:.03,s2023:.050}, row:{s2000:.45,s2023:.490} },
+  gas:     { us:{s2000:.28,s2023:.220}, china:{s2000:.01,s2023:.090}, eu:{s2000:.18,s2023:.100}, india:{s2000:.01,s2023:.020}, row:{s2000:.52,s2023:.570} },
+  nuclear: { us:{s2000:.32,s2023:.290}, china:{s2000:.01,s2023:.150}, eu:{s2000:.35,s2023:.240}, india:{s2000:.01,s2023:.020}, row:{s2000:.31,s2023:.300} },
+  hydro:   { us:{s2000:.14,s2023:.080}, china:{s2000:.16,s2023:.300}, eu:{s2000:.12,s2023:.080}, india:{s2000:.04,s2023:.040}, row:{s2000:.54,s2023:.500} },
+  bio:     { us:{s2000:.10,s2023:.110}, china:{s2000:.08,s2023:.090}, eu:{s2000:.08,s2023:.100}, india:{s2000:.18,s2023:.150}, row:{s2000:.56,s2023:.550} },
+  wind:    { us:{s2000:.20,s2023:.170}, china:{s2000:.02,s2023:.380}, eu:{s2000:.55,s2023:.220}, india:{s2000:.05,s2023:.050}, row:{s2000:.18,s2023:.180} },
+  solar:   { us:{s2000:.20,s2023:.130}, china:{s2000:.05,s2023:.420}, eu:{s2000:.40,s2023:.170}, india:{s2000:.05,s2023:.080}, row:{s2000:.30,s2023:.200} },
+};
+
+// Extra demand-growth allowance per region (percentage points/yr, applied only
+// to the 2024-2050 projection, before shares are renormalized — so regions
+// still sum exactly back to the global total). Reflects the well-documented
+// pattern of demand plateauing in mature economies while still-industrializing
+// regions keep growing regardless of how fast the clean-energy transition goes.
+const REGION_GROWTH_DIFF = { us: 0.0, china: -0.3, eu: -0.6, india: 1.8, row: 0.2 };
+
+const REGION_KEYS = ['us','china','eu','india','row'];
+
+/* =========================================================================
+   ENGINE
+   ========================================================================= */
+
+const dk = window.matchMedia('(prefers-color-scheme: dark)').matches;
+function col(s) { return dk ? s.dc : s.lc; }
+function lp(a, b, t) { return a + (b - a) * t; }
+
+function hInterpGlobal(yr) {
+  const ks = Object.keys(HIST_GLOBAL).map(Number).sort((a, b) => a - b);
+  if (yr <= ks[0])     return { ...HIST_GLOBAL[ks[0]] };
+  if (yr >= ks.at(-1)) return { ...HIST_GLOBAL[ks.at(-1)] };
+  for (let i = 0; i < ks.length - 1; i++) {
+    if (yr >= ks[i] && yr <= ks[i + 1]) {
+      const t = (yr - ks[i]) / (ks[i + 1] - ks[i]), r = {};
+      SRC_KEYS.forEach(k => { r[k] = lp(HIST_GLOBAL[ks[i]][k], HIST_GLOBAL[ks[i + 1]][k], t); });
+      return r;
+    }
+  }
+}
+
+function regionShareRaw(src, region, yr) {
+  const p = REGION_SHARE_PARAMS[src][region];
+  const delta = (p.s2023 - p.s2000) / 23;
+  if (yr <= 2023) return p.s2000 + delta * (yr - 2000);
+  const t = yr - 2023, tau = 12;
+  return p.s2023 + delta * tau * (1 - Math.exp(-t / tau));
+}
+
+function regionShares(src, yr) {
+  const raw = {};
+  REGION_KEYS.forEach(r => {
+    let v = Math.max(0.02, regionShareRaw(src, r, yr));
+    if (yr > 2023) v *= Math.pow(1 + REGION_GROWTH_DIFF[r] / 100, yr - 2023);
+    raw[r] = v;
+  });
+  const tot = Object.values(raw).reduce((a, b) => a + b, 0);
+  const norm = {};
+  REGION_KEYS.forEach(r => { norm[r] = raw[r] / tot; });
+  return norm;
+}
+
+// Runs the global engine, returns [{yr, coal, oil, gas, nuclear, hydro, bio, wind, solar}, ...]
+function runGlobalModel(gdpR, popR, renAmb) {
+  const B  = HIST_GLOBAL[2023];
+  const BT = SRC_KEYS.reduce((s, k) => s + B[k], 0);
+  const windSolarBase2023 = B.wind + B.solar;
+  const rBase = windSolarBase2023 / BT;
+  const rTgt  = 0.13 + (renAmb / 100) * 0.72;
+  const iBonus = (renAmb / 100) * 0.012;
+  const solarFracBase = B.solar / windSolarBase2023;
+
+  const out = [];
+  for (let yr = 2000; yr <= 2050; yr++) {
+    if (yr <= 2023) {
+      const h = hInterpGlobal(yr), e = { yr };
+      SRC_KEYS.forEach(k => { e[k] = Math.round(h[k] * 10) / 10; });
+      out.push(e);
+      continue;
+    }
+    const t = yr - 2023;
+    const gE = Math.pow(1 + gdpR / 100, t * 0.55);
+    const pE = Math.pow(1 + popR / 100, t * 0.25);
+    const iE = Math.pow(1 - 0.015 - iBonus, t);
+    const tot = BT * gE * pE * iE;
+    const prog = 1 - Math.pow(1 - Math.min(1, t / 27), 2);
+
+    const rShr = rBase + (rTgt - rBase) * prog;
+    const windSolar = tot * rShr;
+    const solarTgtFrac = 0.55 + (renAmb / 100) * 0.20;
+    const solarFrac = solarFracBase + (solarTgtFrac - solarFracBase) * prog;
+    const solar = windSolar * solarFrac;
+    const wind  = windSolar * (1 - solarFrac);
+
+    const hydro   = Math.min(70, B.hydro * Math.pow(1.008, t));
+    const nuclear = B.nuclear * Math.pow(1 + (renAmb / 100) * 0.025, t);
+    const bio     = B.bio * Math.pow(1 + popR / 100, t * 0.15) * Math.pow(1 - (renAmb / 100) * 0.005, t);
+
+    const fossilResidual = Math.max(0, tot - solar - wind - hydro - nuclear - bio);
+    const cr = 0.022 + (renAmb / 100) * 0.025;
+    const or_ = 0.008 + (renAmb / 100) * 0.012;
+    const gr = 0.003 + (renAmb / 100) * 0.008;
+    const cR = B.coal * Math.pow(1 - cr, t);
+    const oR = B.oil  * Math.pow(1 - or_, t);
+    const gR = B.gas  * Math.pow(1 - gr, t);
+    const fR = cR + oR + gR;
+    const sc = fR > 0 ? fossilResidual / fR : 0;
+
+    out.push({
+      yr,
+      coal: Math.max(0, cR * sc), oil: Math.max(0, oR * sc), gas: Math.max(0, gR * sc),
+      nuclear, hydro, bio, wind, solar,
+    });
+  }
+  return out;
+}
+
+// Given global model output, returns the same shape scaled to one region.
+function regionalize(globalData, regionKey) {
+  if (regionKey === 'global') return globalData;
+  return globalData.map(row => {
+    const e = { yr: row.yr };
+    SRC_KEYS.forEach(src => {
+      e[src] = row[src] * regionShares(src, row.yr)[regionKey];
+    });
+    return e;
+  });
+}
+
+/* =========================================================================
+   UI
+   ========================================================================= */
+
+// Legend
+const legEl = document.getElementById('legend');
+[...SRCS].reverse().forEach(s => {
+  const d = document.createElement('div');
+  d.className = 'legend-item';
+  d.innerHTML = `<span class="legend-swatch" style="background:${col(s)}"></span>${s.nm}`;
+  legEl.appendChild(d);
+});
+
+document.getElementById('source-note').innerHTML =
+  'Historical: IEA · Energy Institute Statistical Review<br>Projection: Kaya-derived model, regionalized<br>Regional split: illustrative estimate';
+
+// Region tabs
+let activeRegion = 'global';
+const tabsEl = document.getElementById('region-tabs');
+REGIONS.forEach(r => {
+  const b = document.createElement('button');
+  b.className = 'region-tab' + (r.k === 'global' ? ' active' : '');
+  b.textContent = r.nm;
+  b.dataset.region = r.k;
+  b.addEventListener('click', () => {
+    activeRegion = r.k;
+    [...tabsEl.children].forEach(c => c.classList.toggle('active', c.dataset.region === r.k));
+    render();
+  });
+  tabsEl.appendChild(b);
+});
+
+// Now-line plugin
+const nowPlugin = {
+  id: 'nowLine',
+  afterDraw(ch) {
+    const { ctx, chartArea: a, scales: sc } = ch;
+    if (!sc.x) return;
+    const x = sc.x.left + (sc.x.right - sc.x.left) * (23 / 50);
+    ctx.save();
+    ctx.strokeStyle = dk ? 'rgba(200,200,200,0.22)' : 'rgba(80,80,80,0.22)';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([3, 4]);
+    ctx.beginPath(); ctx.moveTo(x, a.top); ctx.lineTo(x, a.bottom); ctx.stroke();
+    const fc = dk ? 'rgba(180,180,180,0.5)' : 'rgba(100,100,100,0.5)';
+    ctx.fillStyle = fc;
+    ctx.font = '10px system-ui, sans-serif';
+    ctx.textAlign = 'right';
+    ctx.fillText('← hist', x - 5, a.top + 12);
+    ctx.textAlign = 'left';
+    ctx.fillText('proj →', x + 5, a.top + 12);
+    ctx.restore();
+  }
+};
+
+const labels = Array.from({ length: 51 }, (_, i) => 2000 + i);
+
+function mkDs(data) {
+  return SRCS.map(s => ({
+    label: s.nm,
+    data: data.map(d => Math.round(d[s.k] * 10) / 10),
+    backgroundColor: col(s) + 'b0',
+    borderColor: col(s),
+    borderWidth: 0.5,
+    fill: true,
+    pointRadius: 0,
+    tension: 0.25,
+  }));
+}
+
+let globalData = runGlobalModel(2.5, 0.7, 40);
+let curData = regionalize(globalData, activeRegion);
+
+const ch = new Chart(document.getElementById('echart'), {
+  type: 'line',
+  data: { labels, datasets: mkDs(curData) },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    interaction: { mode: 'index', intersect: false },
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        backgroundColor: dk ? '#1a2130' : '#ffffff',
+        titleColor:      dk ? '#e2e8f0' : '#111827',
+        bodyColor:       dk ? '#9aa5b4' : '#4b5563',
+        borderColor:     dk ? '#2a3550' : '#e5e7eb',
+        borderWidth: 1,
+        padding: 10,
+        itemSort: (a, b) => b.datasetIndex - a.datasetIndex,
+        callbacks: {
+          title: items => `${items[0].label}${Number(items[0].label) > 2023 ? ' (projected)' : ' (historical)'}`,
+          label: item  => `  ${item.dataset.label}: ${item.raw} EJ`,
+          afterBody(items) {
+            const tot = items.reduce((s, i) => s + (i.raw || 0), 0);
+            return [`  ─────────────────────`, `  Total: ${Math.round(tot * 10) / 10} EJ`];
+          }
+        }
+      }
+    },
+    scales: {
+      x: {
+        ticks: {
+          callback: (v, i) => {
+            const yr = 2000 + i;
+            return [2000, 2005, 2010, 2015, 2020, 2025, 2030, 2040, 2050].includes(yr) ? yr : null;
+          },
+          maxRotation: 0,
+          font: { size: 11 },
+          color: dk ? '#7a8aa0' : '#999',
+          autoSkip: false,
+        },
+        grid:   { color: dk ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)', drawBorder: false },
+        border: { display: false },
+      },
+      y: {
+        stacked: true,
+        ticks:  { font: { size: 11 }, color: dk ? '#7a8aa0' : '#999' },
+        grid:   { color: dk ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)', drawBorder: false },
+        border: { display: false },
+        title:  { display: true, text: 'EJ (exajoules)', font: { size: 11 }, color: dk ? '#7a8aa0' : '#999' },
+      }
+    }
+  },
+  plugins: [nowPlugin]
+});
+
+const REN_LABELS = ['Low', 'Moderate', 'High', 'Aggressive'];
+
+function updateMetrics(data, regionLabel) {
+  const d23 = data.find(d => d.yr === 2023);
+  const d50 = data.at(-1);
+  const t23 = SRC_KEYS.reduce((s, x) => s + d23[x], 0);
+  const t50 = SRC_KEYS.reduce((s, x) => s + d50[x], 0);
+  const clean = (d50.wind + d50.solar + d50.hydro + d50.nuclear) / t50;
+  const chg   = (t50 / t23 - 1) * 100;
+  const co23  = d23.coal * 95 + d23.oil * 70 + d23.gas * 55;
+  const co50  = d50.coal * 95 + d50.oil * 70 + d50.gas * 55;
+  const coChg = (co50 / co23 - 1) * 100;
+  const dan   = dk ? '#F7C1C1' : '#A32D2D';
+  const suc   = dk ? '#9FE1CB' : '#0F6E56';
+  const neu   = dk ? '#e2e8f0' : '#111827';
+
+  const m1 = document.getElementById('m1');
+  m1.textContent = `${Math.round(t50)} EJ`;
+  m1.style.color = neu;
+  document.getElementById('m1sub').textContent = `exajoules · ${regionLabel}`;
+
+  const m2 = document.getElementById('m2');
+  m2.textContent = `${chg >= 0 ? '+' : ''}${Math.round(chg)}%`;
+  m2.style.color = chg > 20 ? dan : chg < -5 ? suc : neu;
+  document.getElementById('m2sub').textContent = `${Math.round(t23)} EJ in 2023`;
+
+  const m3 = document.getElementById('m3');
+  m3.textContent = `${Math.round(clean * 100)}%`;
+  m3.style.color = clean > 0.65 ? suc : clean < 0.35 ? dan : neu;
+
+  const m4 = document.getElementById('m4');
+  m4.textContent = `${coChg >= 0 ? '+' : ''}${Math.round(coChg)}%`;
+  m4.style.color = coChg > 0 ? dan : suc;
+}
+
+function render() {
+  curData = regionalize(globalData, activeRegion);
+  ch.data.datasets = mkDs(curData);
+  ch.update('none');
+  const regionLabel = REGIONS.find(r => r.k === activeRegion).nm;
+  updateMetrics(curData, regionLabel);
+}
+
+function update() {
+  const gdp = parseFloat(document.getElementById('s-gdp').value);
+  const pop = parseFloat(document.getElementById('s-pop').value);
+  const ren = parseInt(document.getElementById('s-ren').value);
+
+  document.getElementById('v-gdp').textContent = gdp.toFixed(1) + '% / yr';
+  document.getElementById('v-pop').textContent = pop.toFixed(1) + '% / yr';
+  document.getElementById('v-ren').textContent = REN_LABELS[ren < 25 ? 0 : ren < 50 ? 1 : ren < 75 ? 2 : 3];
+
+  globalData = runGlobalModel(gdp, pop, ren);
+  render();
+}
+
+['s-gdp', 's-pop', 's-ren'].forEach(id =>
+  document.getElementById(id).addEventListener('input', update)
+);
+update();
+</script>
+</body>
+</html>

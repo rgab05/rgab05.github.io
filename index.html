@@ -1,23 +1,271 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Energy Scenarios | Home</title>
-  <link rel="stylesheet" href="styles.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Energy Scenarios</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: Arial, Helvetica, sans-serif;
+      min-height: 100vh;
+      color: #ffffff;
+      background:
+        radial-gradient(circle at 15% 20%, rgba(34, 197, 94, 0.18), transparent 30%),
+        radial-gradient(circle at 85% 75%, rgba(59, 130, 246, 0.20), transparent 30%),
+        linear-gradient(135deg, #07111f 0%, #0b1728 50%, #111827 100%);
+      overflow-x: hidden;
+    }
+
+    /* Subtle background grid */
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
+      background-size: 50px 50px;
+      pointer-events: none;
+    }
+
+    .page {
+      position: relative;
+      z-index: 1;
+      max-width: 1150px;
+      margin: 0 auto;
+      padding: 70px 30px 50px;
+    }
+
+    .hero {
+      margin-bottom: 55px;
+    }
+
+    .eyebrow {
+      display: inline-block;
+      padding: 7px 13px;
+      margin-bottom: 22px;
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 999px;
+      color: #9ca3af;
+      font-size: 12px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      background: rgba(255,255,255,0.04);
+    }
+
+    h1 {
+      font-size: clamp(42px, 7vw, 78px);
+      line-height: 0.95;
+      letter-spacing: -3px;
+      max-width: 850px;
+      margin-bottom: 25px;
+    }
+
+    h1 span {
+      color: #5eead4;
+    }
+
+    .intro {
+      max-width: 680px;
+      color: #aeb8c7;
+      font-size: 19px;
+      line-height: 1.7;
+    }
+
+    .cards {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 22px;
+    }
+
+    .card {
+      position: relative;
+      min-height: 330px;
+      padding: 35px;
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 24px;
+      overflow: hidden;
+      text-decoration: none;
+      color: white;
+      background: rgba(255,255,255,0.055);
+      backdrop-filter: blur(14px);
+      transition:
+        transform 0.25s ease,
+        border-color 0.25s ease,
+        background 0.25s ease;
+    }
+
+    .card:hover {
+      transform: translateY(-7px);
+      border-color: rgba(255,255,255,0.30);
+      background: rgba(255,255,255,0.09);
+    }
+
+    .energy-card {
+      background:
+        radial-gradient(circle at 85% 20%, rgba(45,212,191,0.20), transparent 30%),
+        rgba(255,255,255,0.055);
+    }
+
+    .cat-card {
+      background:
+        radial-gradient(circle at 85% 20%, rgba(251,191,36,0.18), transparent 35%),
+        rgba(255,255,255,0.055);
+    }
+
+    .icon {
+      font-size: 42px;
+      margin-bottom: 30px;
+    }
+
+    .card h2 {
+      font-size: 30px;
+      margin-bottom: 15px;
+      letter-spacing: -0.5px;
+    }
+
+    .card p {
+      color: #aeb8c7;
+      line-height: 1.65;
+      max-width: 560px;
+    }
+
+    .arrow {
+      position: absolute;
+      right: 30px;
+      bottom: 25px;
+      font-size: 30px;
+      color: #5eead4;
+      transition: transform 0.25s ease;
+    }
+
+    .cat-card .arrow {
+      color: #fbbf24;
+    }
+
+    .card:hover .arrow {
+      transform: translateX(7px);
+    }
+
+    .energy-lines {
+      position: absolute;
+      right: -80px;
+      bottom: -100px;
+      width: 300px;
+      height: 300px;
+      border: 1px solid rgba(94,234,212,0.15);
+      border-radius: 50%;
+    }
+
+    .energy-lines::before,
+    .energy-lines::after {
+      content: "";
+      position: absolute;
+      inset: 30px;
+      border: 1px solid rgba(94,234,212,0.12);
+      border-radius: 50%;
+    }
+
+    .energy-lines::after {
+      inset: 65px;
+    }
+
+    footer {
+      margin-top: 55px;
+      color: #596579;
+      font-size: 13px;
+      letter-spacing: 0.5px;
+    }
+
+    @media (max-width: 750px) {
+      .page {
+        padding: 45px 20px;
+      }
+
+      .cards {
+        grid-template-columns: 1fr;
+      }
+
+      .card {
+        min-height: 280px;
+      }
+
+      h1 {
+        letter-spacing: -2px;
+      }
+    }
+  </style>
 </head>
+
 <body>
 
-<nav>
-  <a href="energy-model-ei-granular-2060.html">Energy Model</a>
-  <a href="felidae-family-tree_rev_1.html">Cat Family</a>
-</nav>
+  <main class="page">
 
-<div class="container">
-  <h1>Energy Scenarios Dashboard</h1>
-  <p>
-    This tool allows users to explore energy demand growth,
-    compare scenarios, and understand the modeling methodology.
-  </p>
-</div>
+    <section class="hero">
+      <div class="eyebrow">Exploration &amp; Analysis</div>
+
+      <h1>
+        Explore the future of <span>energy.</span>
+      </h1>
+
+      <p class="intro">
+        Interactive models and visualisations for exploring how energy
+        demand, technology and the global energy system could evolve
+        over the coming decades.
+      </p>
+    </section>
+
+    <section class="cards">
+
+      <a class="card energy-card"
+         href="energy-model-ei-granular-2060.html">
+
+        <div class="icon">⚡</div>
+
+        <h2>Energy Model</h2>
+
+        <p>
+          Explore global energy demand by geography and energy source,
+          with granular views of the evolving energy system through 2060.
+        </p>
+
+        <div class="energy-lines"></div>
+        <div class="arrow">→</div>
+
+      </a>
+
+
+      <a class="card cat-card"
+         href="felidae-family-tree_rev_1.html">
+
+        <div class="icon">🐈</div>
+
+        <h2>Cat Family</h2>
+
+        <p>
+          A visual journey through the evolution and relationships
+          of the feline family.
+        </p>
+
+        <div class="arrow">→</div>
+
+      </a>
+
+    </section>
+
+    <footer>
+      Energy Scenarios · Interactive Exploration
+    </footer>
+
+  </main>
 
 </body>
 </html>
